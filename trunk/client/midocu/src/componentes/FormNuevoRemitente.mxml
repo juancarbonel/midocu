@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="394" height="404" creationComplete="this.main()">
+	<mx:Script>
+		<![CDATA[
+			import libs.Validador;
+			import configuracion.ConfigGlobal;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService; 
+			//atributos
+			private var http:HTTPService;
+			
+		
+			private function main():void{
+				this.init();
+			}
+			
+			private function init():void{
+				this.http=new HTTPService();
+				this.http.resultFormat=HTTPService.RESULT_FORMAT_TEXT;
+				this.http.url= ConfigGlobal.getUrlGlobal();
+				this.http.method="POST";
+				this.http.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttp);
+				this.http.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttp);
+				
+				
+			}
+			
+			private function alObtenerRespuestaHttp(e:ResultEvent):void{
+				this.set_modo_registrando(false);
+				Alert.show(e.result.toString());
+					
+			}
+			private function alFallarRespuestaHttp(e:FaultEvent):void{
+				
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				
+				this.set_modo_registrando(false);
+				Alert.show("Fallo al guardar");
+			}
+			
+			public function visualizarFormPersonaNatural():void
+			{
+				this.vistasFormsPersona.selectedChild=this.vistaFormPersonaNatural;
+			}
+			
+			public function visualizarFormPersonaJuridica():void
+			{
+				this.vistasFormsPersona.selectedChild=this.vistaFormPersonaJuridica;
+			}
+			
+			
+			
+			private function registrar(){
+				
+				if(this.estaLlenadoCorrectamente()){
+				
+				
+				//armando parametros	
+				 var parametros:Object=new Object();
+				 
+					parametros.email=this.txtEmail.text;
+					parametros.telefono=this.txtTelefono.text;
+					
+					if(this.chkTipoPersonaNatural.selected==true){
+						parametros.registrar="remitenteNatural";
+						parametros.nombres=this.txtNombres.text;
+						parametros.apellidos=this.txtApellidos.text;
+						if(this.chkMasculino.selected){
+							parametros.sexo=1;
+						}else{
+							parametros.sexo=0;
+						}
+						
+					}else{
+						parametros.registrar="remitenteJuridico";
+						parametros.razonSocial=this.txtRazonSocial.text;
+						parametros.ruc=this.txtDireccion.text;
+						parametros.direccion=this.txtDireccion.text;
+					}	
+				 //fin armado de parametros
+				 
+				 
+				 /*
+				 * enviando parametros 
+				 * a url que registra remitente
+				 */
+				 
+				 this.http.send(parametros);
+				 this.set_modo_registrando(true);
+				}
+				
+			}
+			
+			
+			private function set_modo_registrando(valor:Boolean){
+				if(valor==true){
+					this.viewGeneral.selectedChild=this.cvRegistrando;
+				}else{
+					this.viewGeneral.selectedChild=this.frmRegDocumento;
+				}
+			} 
+			
+			private function estaLlenadoCorrectamente():Boolean{
+				var estado:Boolean=true;
+				//si selecciona persona natural
+				
+				this.txtEmail.errorString = "";
+				this.txtTelefono.errorString = "";
+				
+				if(this.chkTipoPersonaNatural.selected == true){
+					this.txtApellidos.errorString ="";
+					this.txtNombres.errorString = "";
+					
+					
+					if(this.txtNombres.text == ""){
+						this.txtNombres.errorString = 'ingrese sus nombres';
+						estado = false;
+					}
+					
+					if(this.txtApellidos.text == ""){
+						this.txtApellidos.errorString = 'ingrese sus apellidos';
+						estado = false;
+					}
+				}else{
+					this.txtRazonSocial.errorString = "";
+					this.txtRuc.errorString = "";
+					this.txtDireccion.errorString ="";
+				//entonces si selecciono persona juridica
+				
+					if(this.txtRazonSocial.text == ""){
+						this.txtRazonSocial.errorString = "ingrese razon social";
+						estado = false;
+					}
+				}
+				
+				if(this.txtEmail.text != ""){
+					if(!Validador.isEmail(this.txtEmail.text)){
+						this.txtEmail.errorString = "Email invalido";
+						estado = false;
+					}
+					
+				}
+				return estado;
+			}
+		]]>
+	</mx:Script>
+	<mx:ViewStack x="0" y="0" id="viewGeneral" width="394" height="404">
+		<mx:Canvas width="100%" height="100%" id="frmRegDocumento">
+			<mx:Label x="10" y="21" text="Formulario Registro - Remitente" textDecoration="underline" fontWeight="bold"/>
+			<mx:HRule x="20.75" y="81" width="351"/>
+			<mx:ViewStack x="29.5" y="87" id="vistasFormsPersona" width="331" height="152">
+				<mx:Canvas width="100%" height="100%" id="vistaFormPersonaNatural">
+					<mx:Label x="30" y="42" text="Apellidos :"/>
+					<mx:TextInput x="93" y="40" id="txtApellidos"/>
+					<mx:Label x="50.5" y="84" text="Sexo :"/>
+					<mx:RadioButton x="94" y="82" label="Masculino" groupName="chkSexoPersonaNatural" selected="true" id="chkMasculino"/>
+					<mx:RadioButton x="181" y="82" label="Femenino" groupName="chkSexoPersonaNatural" selected="false" id="chkFemenino"/>
+					<mx:TextInput x="93" y="10" id="txtNombres"/>
+					<mx:Label x="30" y="12" text="Nombres :"/>
+				</mx:Canvas>
+				<mx:Canvas width="100%" height="100%" id="vistaFormPersonaJuridica">
+					<mx:Form x="13" y="10" width="305" height="120">
+						<mx:FormItem label="Razon Social :">
+							<mx:TextInput id="txtRazonSocial"/>
+						</mx:FormItem>
+						<mx:FormItem label="RUC :">
+							<mx:TextInput width="128" id="txtRuc"/>
+						</mx:FormItem>
+						<mx:FormItem label="Direccion :">
+							<mx:TextInput width="140" id="txtDireccion"/>
+						</mx:FormItem>
+					</mx:Form>
+				</mx:Canvas>
+			</mx:ViewStack>
+			<mx:RadioButton x="31.75" y="51" label="Persona natural" groupName="chkTipoPersona" selected="true" click="visualizarFormPersonaNatural()" id="chkTipoPersonaNatural" enabled="true"/>
+			<mx:RadioButton x="168.5" y="51" label="Persona Juridica" groupName="chkTipoPersona" id="chkTipoPersonaJuridica" click="visualizarFormPersonaJuridica()" enabled="true" selected="false"/>
+			<mx:HRule x="20.25" y="238" width="351.5" height="7"/>
+			<mx:HRule x="20.25" y="333" width="351.5" height="7"/>
+			<mx:Button x="209.75" y="351" label="Registrar Remitente" click="this.registrar();" id="btnRegistrar"/>
+			<mx:Label x="144" y="273" text="ejemplo: correo@hootmail.com" fontSize="9" fontWeight="normal" fontStyle="italic"/>
+			<mx:TextInput x="144" y="249" width="148" id="txtEmail"/>
+			<mx:Label x="84" y="251" text="email :"/>
+			<mx:Label x="68" y="301" text="telefono :"/>
+			<mx:TextInput x="144" y="299" width="122.5" id="txtTelefono"/>
+		</mx:Canvas>
+		<mx:Canvas label="" width="100%" height="100%" id="cvRegistrando">
+			<mx:ProgressBar x="97" y="196" label="Registrando..." indeterminate="true"/>
+		</mx:Canvas>
+	</mx:ViewStack>
+		
+</mx:Canvas>

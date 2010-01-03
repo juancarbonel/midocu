@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="554" height="468" xmlns:ns1="componentes.*">
+	<mx:TabNavigator x="10" y="10" width="535" height="449">
+		<mx:Canvas label="Nuevo" width="100%" height="100%">
+			<ns1:FormNuevoRemitente x="0" y="0" width="458">
+			</ns1:FormNuevoRemitente>
+		</mx:Canvas>
+		<mx:Canvas label="Listado" width="100%" height="100%" show="this.canvasBuscadorRemitentes.cargar();">
+			<ns1:CanvasBuscadorRemitente x="0" y="0" width="434" height="338" id="canvasBuscadorRemitentes">
+			</ns1:CanvasBuscadorRemitente>
+		</mx:Canvas>
+	</mx:TabNavigator>
+	
+</mx:Canvas>

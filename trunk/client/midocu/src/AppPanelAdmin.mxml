@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" horizontalAlign="center" xmlns:ns1="componentes.*" creationComplete="this.main()" backgroundGradientAlphas="[1.0, 1.0]" backgroundGradientColors="[#0F3552, #1298D0]">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.effects.Effect;
+			
+			private function main():void{
+			 
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Canvas width="910" creationCompleteEffect="Fade">
+		<mx:Panel x="0" y="0" width="100%" height="116" layout="absolute" creationCompleteEffect="WipeRight" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+			<ns1:LogoCabecera x="0" y="0" creationCompleteEffect="Fade" height="76">
+			</ns1:LogoCabecera>
+			<ns1:CanvasCerrarSession y="0" right="69">
+			</ns1:CanvasCerrarSession>
+		</mx:Panel>
+	<mx:ApplicationControlBar width="100%" height="47" creationCompleteEffect="Zoom" x="0" y="125">	
+		<mx:ToggleButtonBar x="5" y="124" width="437" height="30" dataProvider="viewPrincipal" creationCompleteEffect="WipeLeft">
+		</mx:ToggleButtonBar>
+	</mx:ApplicationControlBar>	
+			<mx:ViewStack x="0" y="180" id="viewPrincipal" width="100%" height="619">
+				<mx:Canvas label="principal" width="100%" showEffect="WipeDown" hideEffect="WipeUp">
+					<mx:Panel width="100%">
+						<mx:SWFLoader x="117" y="10" width="510" height="360" source="recursos/swf/logo_principal.swf" scaleContent="false" creationCompleteEffect="Zoom"/>				
+					</mx:Panel>
+				</mx:Canvas>
+				<mx:Canvas label="Usuarios" width="100%" height="100%" showEffect="WipeDown" hideEffect="WipeUp">
+					<mx:Panel width="100%"  y="0" x="0">
+						<ns1:CanvasAdminUsuario x="10" y="9">
+						</ns1:CanvasAdminUsuario>
+					</mx:Panel>
+				</mx:Canvas>
+				<mx:Canvas label="Remitentes" width="100%" height="100%" showEffect="WipeDown" hideEffect="WipeUp">
+					<mx:Panel width="100%"  y="0" x="0">
+					<ns1:CanvasRemitente x="0" y="0">
+					</ns1:CanvasRemitente>
+					</mx:Panel>
+				</mx:Canvas>
+				<mx:Canvas label="Documento" width="100%" height="100%" showEffect="WipeDown" hideEffect="WipeUp">
+					<mx:Panel width="100%"  y="0" x="0">
+						 <ns1:CanvasAdminDocumento width="100%">
+						 	
+						 </ns1:CanvasAdminDocumento>
+					</mx:Panel>
+				</mx:Canvas>
+				<mx:Canvas label="Areas" width="100%" height="100%" showEffect="WipeDown" hideEffect="WipeUp">
+					<mx:Panel width="100%"  y="0" x="0" height="475" layout="absolute">
+						<ns1:CanvasAdminAreas x="10" y="0">
+						</ns1:CanvasAdminAreas>
+					</mx:Panel>
+				</mx:Canvas>
+			</mx:ViewStack>
+		
+	</mx:Canvas>
+	
+</mx:Application>

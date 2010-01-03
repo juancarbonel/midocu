@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="352" height="394" xmlns:componentes="componentes.*" creationComplete="this.main()" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import mx.controls.Alert;
+			import mx.accessibility.AlertAccImpl;
+			import mx.effects.effectClasses.ParallelInstance;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			import configuracion.ConfigGlobal;
+			import mx.events.ListEvent;
+			
+			
+			private var _httpCarga:HTTPService;		
+			private var _httpActualiza:HTTPService;
+			
+			// Datos de documento
+			private var _idDocumento:String;
+			
+			private var _idAsuntoSeleccionado:String;	
+			private var _nombreAsuntoSeleccionado:String;
+		
+			
+			private var _idRemitenteSeleccionado:String;
+			private var _nombreRemitenteSeleccionado:String;
+			
+			private var _idTipoDocumento:String;
+			private var _nombreTipoDocumento:String;
+			
+			private var _nroDocumento:String;
+			private var _nroFolios:String;
+			private var _comentario:String;
+			private var _sumilla:String;
+			private var _idEstadoDocumento:String;
+			private var _fechaReg;
+			
+		
+			//--fin de datos de documento
+			
+			
+			
+			
+			private function main():void{
+				this.init();
+			}
+			
+			private function init():void{
+				/****************************
+				 * preparando _httpCarga
+				 ***************************/
+				this._httpCarga=new HTTPService();
+				//this._http.resultFormat= HTTPService.RESULT_FORMAT_TEXT;
+				this._httpCarga.resultFormat= HTTPService.RESULT_FORMAT_E4X;
+				this._httpCarga.url= ConfigGlobal.getUrlGlobal();
+				this._httpCarga.method="POST";
+				this._httpCarga.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttpCarga);
+				this._httpCarga.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttpCarga);
+				
+				/****************************
+				 * preparando _httpActualiza
+				 ***************************/
+				this._httpActualiza=new HTTPService();
+				this._httpActualiza.resultFormat= HTTPService.RESULT_FORMAT_TEXT;
+				//this._httpCarga.resultFormat= HTTPService.RESULT_FORMAT_E4X;
+				this._httpActualiza.url= ConfigGlobal.getUrlGlobal();
+				this._httpActualiza.method="POST";
+				this._httpActualiza.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttpActualiza);
+				this._httpActualiza.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttpActualiza);
+				
+				/*****************************
+				 * preparando cboTipoDocumento 
+				 *****************************/
+				 this.cboTiposDocumento.addEventListener(ListEvent.CHANGE,this.cboTipoDocumento_ON_CHANGE);
+				 
+				 /******************************
+				 * preparando cboEstadoDocumento 
+				 *******************************/
+				 this.cboEstadoDocumento.addEventListener(ListEvent.CHANGE,this.cboEstadoDocumento_ON_CHANGE);
+				 
+				 
+				 this.txtNroDocumento.addEventListener(Event.CHANGE,this.txtNroDocumento_ON_CHANGE);
+				 this.numNroFolios.addEventListener(Event.CHANGE,this.numNroFolios_ON_CHANGE);
+				 this.txtSumilla.addEventListener(Event.CHANGE,this.txtSumilla_ON_CHANGE);
+				 this.txtComentario.addEventListener(Event.CHANGE,this.txtComentario_ON_CHANGE);
+			
+			}
+			
+			private function cboTipoDocumento_ON_CHANGE(e:ListEvent){
+				this._idTipoDocumento = this.cboTiposDocumento.getIdTipoSeleccionado();
+			
+			}
+			
+			private function cboEstadoDocumento_ON_CHANGE(e:ListEvent){
+				this._idEstadoDocumento = this.cboEstadoDocumento.getIdEstadoSeleccionado();
+			}
+			
+			
+			private function abrirBuscadorRemitente():void{
+				 var unaVentana:Ventana=new Ventana();
+				 var buscadorRemitente:CanvasBuscadorRemitente =new CanvasBuscadorRemitente()
+				
+				 
+				 unaVentana.padre=this.parent;
+				 unaVentana.addChild(buscadorRemitente);
+				 buscadorRemitente.dgRemitentes.addEventListener(ListEvent.CHANGE,this.alEscogerRemitente);	
+				 unaVentana.mostrar();
+				 unaVentana.x = this.parentApplication.mouseX;
+				 unaVentana.y = this.parentApplication.mouseY - (buscadorRemitente.height/2);
+				
+				 
+				
+			}
+			
+			private function abrirBuscadorAsunto():void{
+				 var unaVentana:Ventana=new Ventana();
+				 var buscadorRequisitosAsunto:CanvasBuscadorRequisitosAsunto=new CanvasBuscadorRequisitosAsunto();
+				
+				 
+				 unaVentana.padre=this.parent;
+				
+				 unaVentana.addChild(buscadorRequisitosAsunto);
+				 buscadorRequisitosAsunto.dgAsuntos.addEventListener(ListEvent.CHANGE,this.alEscogerAsunto);
+				 unaVentana.mostrar();
+				 unaVentana.x = this.parentApplication.mouseX;
+				 unaVentana.y = this.parentApplication.mouseY-(buscadorRequisitosAsunto.height/2);
+				 
+			}
+			
+			private function alEscogerRemitente(e:ListEvent):void{
+				this._idRemitenteSeleccionado=e.target.getIdRemitenteSeleccionado();
+				this.txtRemitente.text=e.target.getNombreRemitenteSeleccionado();
+			}
+			
+			private function alEscogerAsunto(e:ListEvent):void{
+				this.txtAsunto.text= e.target.getNombreAsuntoSeleccionado();
+				this._idAsuntoSeleccionado = e.target.getIdAsuntoSeleccionado();
+			}
+			
+			
+			
+			
+			public function set IdDocumento(valor:String){
+					this._idDocumento=valor;	
+			}
+			
+			
+			
+			
+			
+			public function cargar():void{
+				
+					var parametros:Object=new Object();
+					parametros.mostradorXml="documento";
+					parametros.idDocumento=this._idDocumento;
+					this._httpCarga.send(parametros);
+					
+			
+			}
+			
+			private function alObtenerRespuestaHttpActualiza(e:ResultEvent):void{
+				Alert.show(e.result.toString());
+			}
+			private function alFallarRespuestaHttpActualiza(e:FaultEvent):void{
+				
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				
+				Alert.show('no se pudo actualizar documento');
+			}	
+			
+			private function alObtenerRespuestaHttpCarga(e:ResultEvent):void{
+			
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				
+				
+				
+				var xmlDocumento:XMLList = new XMLList(e.result);
+				//Alert.show(xmlDocumento.toString());
+				this._idDocumento=xmlDocumento.child("Id");
+				
+				
+				this._nroDocumento = xmlDocumento.child("NroDocumento");
+				this._sumilla = xmlDocumento.child("Sumilla");
+				this._comentario = xmlDocumento.child("Comentario");
+				this._nroFolios =  xmlDocumento.child("NroFolios")
+				this._fechaReg = xmlDocumento.child("FechaReg");
+			
+				//datos Asunto
+				this._idAsuntoSeleccionado =  xmlDocumento.child("IdAsunto");
+				this._nombreAsuntoSeleccionado = xmlDocumento.child("NombreAsunto");
+				
+				//Datos Remitente
+				this._idRemitenteSeleccionado = xmlDocumento.child("IdRemitente");
+				this._nombreRemitenteSeleccionado = xmlDocumento.child("NombreRemitente");
+				
+				//Datos Tipo Documento
+				this._idTipoDocumento = xmlDocumento.child("IdTipoDocumento");
+				this._nombreTipoDocumento  = xmlDocumento.child("NombreTipoDocumento");
+				
+				//datos estadoDocumento
+				this._idEstadoDocumento =  xmlDocumento.child("IdEstadoDocumento");
+				
+				
+				
+				//cargando cboEstadoDocumento 
+				this.cboEstadoDocumento.setIdEstadoSeleccionado(this._idEstadoDocumento);
+				this.cboEstadoDocumento.cargar();
+				
+				//cargando cboTiposDocumento			
+				this.cboTiposDocumento.setIdTipoSeleccionado(this._idTipoDocumento);
+				this.cboTiposDocumento.cargar();
+				
+				//muestra en pantalla				
+				this.redibujar_datos();
+
+				
+			}
+			
+			private function redibujar_datos():void{
+				
+				this.lblId.text = this._idDocumento;
+				this.txtRemitente.text = this._nombreRemitenteSeleccionado ;
+				this.txtAsunto.text = this._nombreAsuntoSeleccionado ;
+				this.txtComentario.text = this._comentario;
+				this.txtSumilla.text = this._sumilla;
+				this.txtNroDocumento.text = this._nroDocumento;
+				this.lblFechaReg.text = this._fechaReg;
+				this.numNroFolios.value =  Number(this._nroFolios);
+				
+				
+			}
+			
+			
+			private function alFallarRespuestaHttpCarga(e:FaultEvent):void{
+					Alert.show(e.fault.toString());
+			}
+			
+			private function guardarCambios(){
+				var parametros:Object = new Object();
+				parametros.actualizar = 'documento';
+				parametros.idDocumento = this._idDocumento;
+				parametros.idAsunto = this._idAsuntoSeleccionado;
+				parametros.idRemitente = this._idRemitenteSeleccionado;
+				parametros.nroDocumento = this._nroDocumento;
+				parametros.nroFolios = this._nroFolios;
+				parametros.sumilla = this._sumilla;
+				parametros.comentario = this._comentario;
+				parametros.idEstado = this._idEstadoDocumento;
+				parametros.idTipo = this._idTipoDocumento;
+				this._httpActualiza.send(parametros);
+				
+			}
+			
+			
+			private function btnGuardar_CLICK():void{
+				this.guardarCambios();
+			}			
+			
+			private function txtNroDocumento_ON_CHANGE(e:Event){
+				this._nroDocumento = this.txtNroDocumento.text;
+			}
+			
+			private function numNroFolios_ON_CHANGE(e:Event){
+				this._nroFolios = this.numNroFolios.value.toString();
+			}
+			
+			private function txtSumilla_ON_CHANGE(e:Event){
+				this._sumilla = this.txtSumilla.text;
+			}
+			
+			private function txtComentario_ON_CHANGE(e:Event){
+				this._comentario = this.txtComentario.text;
+			}
+		]]>
+		
+	</mx:Script>
+	<mx:Label x="15" y="10" text="Documento" fontWeight="bold" textDecoration="underline"/>
+	<componentes:ComboBoxTiposDocumento x="145" y="87" id="cboTiposDocumento" width="160"/>
+	<mx:Label x="65" y="59" text="Remitente"/>
+	<mx:Label x="15" y="89" text="Tipo de documento"/>
+	<mx:TextInput x="145" y="57" editable="false" id="txtRemitente"/>
+	<mx:Button x="313" y="57" width="29" id="btnBuscarRemitente" click="this.abrirBuscadorRemitente();" icon="@Embed(source='../recursos/img/folder.gif')"/>
+	<mx:TextInput x="149" y="152" width="119" id="txtNroDocumento"/>
+	<mx:Label x="42" y="154" text="Nro Documento"/>
+	<mx:NumericStepper x="149" y="182" value="1" id="numNroFolios"/>
+	<mx:Label x="75" y="184" text="Nro folios"/>
+	<mx:Label x="86" y="275" text="Sumilla"/>
+	<mx:Label x="20" y="242" text="Estado documento"/>
+	<componentes:ComboBoxEstadosDocumento x="145" y="244" id="cboEstadoDocumento"/>
+	<mx:TextArea x="149" y="274" width="172" height="38" id="txtSumilla"/>
+	<mx:Label x="62" y="321" text="Comentario" fontStyle="normal" fontWeight="normal"/>
+	<mx:TextArea x="149" y="320" width="172" height="29" id="txtComentario"/>
+	<mx:Label x="80" y="125" text="Asunto"/>
+	<mx:TextInput x="145" y="124" id="txtAsunto" editable="false"/>
+	<mx:Button x="313" y="124" width="29" id="btnBuscarAsunto" click="this.abrirBuscadorAsunto()" icon="@Embed(source='../recursos/img/folder.gif')"/>
+	
+	<mx:Label x="105" y="33" text="ID:"/>
+	<mx:Label x="145" y="33" width="176" id="lblId"/>
+	<mx:Label x="93" y="212" text="Fecha"/>
+	<mx:Label x="149" y="214" width="156" id="lblFechaReg"/>
+	<mx:Button x="231" y="357" label="Guardar" icon="@Embed(source='../recursos/img/mini_guardar.png')" id="btnGuardar" click="this.btnGuardar_CLICK()"/>
+	
+</mx:Canvas>

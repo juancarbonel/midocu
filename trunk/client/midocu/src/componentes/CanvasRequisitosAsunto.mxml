@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="336" height="354" creationComplete="this.main()" xmlns:ns1="componentes.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+		
+			private var _idAsunto:String;
+			
+			private function main():void{
+				this.init();
+			}
+			
+			
+			
+			private function init():void{
+				this.cargar();
+			}
+			
+			public function set IdAsunto(valor:String):void{
+				this._idAsunto = valor;
+			}
+			
+			public function get IdAsunto():String{
+				return this._idAsunto;
+			}
+			
+			public function cargar():void{
+				
+				if(this._idAsunto!=null){
+					this.dgRequisitosAsunto.IdAsunto = this._idAsunto;
+					this.dgRequisitosAsunto.cargar();
+					
+					this.frmRegRequisitoAsunto.IdAsunto = this._idAsunto;
+	
+					
+				}else{
+					Alert.show('error al cargar CanvasRequisitosAsunto: No se establecio IdAsunto');
+				}
+				
+			}
+			
+			
+		]]>
+	</mx:Script>
+	<ns1:DatagridRequisitosAsunto x="18.5" y="10" id="dgRequisitosAsunto" width="299" height="171"/>
+	<ns1:FormNuevoRequisitoAsunto x="27" y="217" id="frmRegRequisitoAsunto" height="127">
+	</ns1:FormNuevoRequisitoAsunto>
+	<mx:ApplicationControlBar x="18" y="176" width="299.5">
+		<mx:Button label="Refrescar" click="this.cargar()">
+			<mx:icon>@Embed(source='../recursos/img/mini_refrescar.gif')</mx:icon>
+		</mx:Button>
+	</mx:ApplicationControlBar>
+</mx:Canvas>

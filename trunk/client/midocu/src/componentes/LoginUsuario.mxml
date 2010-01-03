@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="228" height="124" creationComplete="this.main()">
+	<mx:Script>
+		<![CDATA[
+			import mx.core.Application;
+			import flash.net.navigateToURL;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;
+			import mx.rpc.http.HTTPService;
+			import configuracion.ConfigGlobal;
+			
+				
+		private var _http:HTTPService;
+		private var _url_ir:String;
+		
+		private function main():void{
+			this.init();
+		}
+		
+		private function init(){
+				this._http=new HTTPService();
+				this._http.method="POST";
+				//this._http.resultFormat = HTTPService.RESULT_FORMAT_E4X;
+				this._http.resultFormat= HTTPService.RESULT_FORMAT_TEXT;
+				this._http.url=ConfigGlobal.getUrlGlobal();
+				this._http.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttp);
+				this._http.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttp);
+				
+				this.txtPassword.addEventListener(KeyboardEvent.KEY_DOWN,this.txtPassword_CLICK);
+				this.txtEmail.addEventListener(KeyboardEvent.KEY_DOWN,this.txtEmail_CLICK);
+				
+			}
+			
+			private function txtPassword_CLICK(e:KeyboardEvent){
+				if(e.charCode==13){
+					this.conectar();
+				}
+			}
+			
+			private function txtEmail_CLICK(e:KeyboardEvent):void{
+				if(e.charCode==13){
+					this.txtPassword.setFocus();
+				}
+			}
+			
+		private function alObtenerRespuestaHttp(e:ResultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				 var autXml:XML=new XML(e.result);
+				
+			 if(autXml.child('Autentificado')=="true"){
+			 	if(this._url_ir!=null){
+			 		var direccion:URLRequest=new URLRequest(this._url_ir);
+					navigateToURL(direccion,"_self");
+			 	}
+			 }else{
+			 	Alert.show("Contrasena incorrecta");
+			 }
+			 
+				 
+				
+
+			}
+			
+			private function alFallarRespuestaHttp(e:FaultEvent):void{
+				
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				
+				Alert.show("error:"+e.fault.toString());
+			}
+			
+			private function conectar():void{
+				
+				var parametros:Object=new Object();
+				parametros.accion='autentificacionUsuario';
+				parametros.email = this.txtEmail.text;
+				parametros.password = this.txtPassword.text;
+			
+				this._http.send(parametros);
+			
+			}
+			
+			
+			public function set Url_ir(unaUrl:String){
+				this._url_ir=unaUrl;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Label x="14.5" y="25" text="usuario :" id="lblUsuario"/>
+	<mx:TextInput x="70.5" y="23" width="146.5" id="txtEmail"/>
+	<mx:Label x="6.5" y="60" text="password :"/>
+	<mx:TextInput x="70.5" y="55" width="147.5" displayAsPassword="true" id="txtPassword"/>
+	<mx:Button x="123" y="92" label="Conectarme" click="this.conectar()"/>
+</mx:Canvas>

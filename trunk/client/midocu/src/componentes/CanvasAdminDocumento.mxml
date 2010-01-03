@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="678" height="378" xmlns:ns1="componentes.*" creationComplete="this.main()">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.events.ListEvent;
+			private function main():void{
+				this.init();
+			}
+			
+			private function init():void{
+				this.buscadorAsuntos.dgAsuntos.addEventListener(ListEvent.CHANGE,this.buscadorAsuntos_CHANGE);
+			}
+			
+			private function dgTiposDocumento_CHANGE():void{
+				var idT:String= this.dgTiposDocumento.IdTipoDocumentoSeleccionado;
+				this.frmEditarTipoDocumento.setId(idT);
+				this.frmEditarTipoDocumento.set_modo_edicion();
+				this.frmEditarTipoDocumento.enabled = true;
+			}
+			
+			private function dgEstadoDocumento_CHANGE():void{
+				var idE:String= this.dgEstadosDocumento.IdEstadoDocumentoSeleccionado;
+			
+				this.frmEditarEstadoDocumento.setId(idE);
+				this.frmEditarEstadoDocumento.set_modo_edicion();
+				this.frmEditarEstadoDocumento.enabled = true;
+				
+			}
+			
+			private function buscadorAsuntos_CHANGE(e:ListEvent):void{
+				var idA:String = this.buscadorAsuntos.dgAsuntos.getIdAsuntoSeleccionado();
+				this.frmEditarAsunto.setId(idA);
+				this.frmEditarAsunto.set_modo_edicion();
+				this.frmEditarAsunto.enabled = true;
+					
+			}
+			
+			
+			
+			
+		]]>
+	</mx:Script>  
+	<mx:TabNavigator x="6" y="10" width="666" height="341">
+		<mx:Canvas label="Asunto" width="100%" height="100%">
+			<ns1:CanvasBuscadorRequisitosAsunto x="4" y="4" width="331" height="265" id="buscadorAsuntos" >
+			</ns1:CanvasBuscadorRequisitosAsunto>
+			<mx:Panel x="338" y="5" width="316" height="217" layout="vertical" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+				<ns1:FormAsunto id="frmEditarAsunto" enabled="false">
+				</ns1:FormAsunto>
+				<mx:ApplicationControlBar width="296" height="34">
+					<mx:Button label="NuevoAsunto" id="btnNuevoTipo0" click="this.frmEditarAsunto.set_modo_nuevo();"/>
+				</mx:ApplicationControlBar>
+			</mx:Panel>
+		</mx:Canvas>
+		<mx:Canvas label="TiposDocumento" width="100%" height="100%">
+			<mx:Panel x="10" y="10" width="251" height="288" layout="absolute" title="Lista">
+				<ns1:DatagridTiposDocumento x="10" y="0" id="dgTiposDocumento" change="{this.dgTiposDocumento_CHANGE()}"/>
+				<mx:Button x="10" y="226" width="36" id="btnRefrescarDgTiposDocumento" click="this.dgTiposDocumento.cargar()">
+					<mx:icon>@Embed(source='../recursos/img/mini_refrescar.gif')</mx:icon>
+				</mx:Button>
+			</mx:Panel>
+			<mx:Panel x="269" y="10" width="323" height="216" layout="vertical" verticalScrollPolicy="off">
+				<ns1:FormTipoDocumento id="frmEditarTipoDocumento" enabled="false">
+				</ns1:FormTipoDocumento>
+				<mx:ApplicationControlBar width="100%" height="34">
+					<mx:Button label="Nuevo Tipo" id="btnNuevoTipo" click="this.frmEditarTipoDocumento.set_modo_nuevo();"/>
+				</mx:ApplicationControlBar>
+			</mx:Panel>
+		</mx:Canvas>
+		<mx:Canvas label="Estados Documento" width="100%" height="100%">
+			<mx:Panel x="268" y="8" width="325" height="212" layout="vertical" verticalScrollPolicy="off">
+				<ns1:FormEstadoDocumento id="frmEditarEstadoDocumento" enabled="false">
+				</ns1:FormEstadoDocumento>
+				<mx:ApplicationControlBar width="100%" height="34">
+					<mx:Button label="Nuevo Estado" id="btnNuevoEstado" click="this.frmEditarEstadoDocumento.set_modo_nuevo()"/>
+				</mx:ApplicationControlBar>
+			</mx:Panel>
+			<mx:Panel x="10" y="0" width="250" height="298" layout="absolute" title="Lista">
+				<ns1:DatagridEstadosDocumento x="10" y="10" id="dgEstadosDocumento" change="{this.dgEstadoDocumento_CHANGE()}" height="221"/>
+				<mx:Button x="10" y="229" width="36" id="btnRefrescarDgEstadosDocumento" click="this.dgEstadosDocumento.cargar()">
+					<mx:icon>@Embed(source='../recursos/img/mini_refrescar.gif')</mx:icon>
+				</mx:Button>
+			</mx:Panel>
+		</mx:Canvas>
+	</mx:TabNavigator>
+	
+</mx:Canvas>

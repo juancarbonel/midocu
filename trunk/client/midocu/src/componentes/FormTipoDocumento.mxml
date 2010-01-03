@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="290" height="132" creationComplete="this.main()" horizontalScrollPolicy="off"  verticalScrollPolicy="off">
+		<mx:Script>
+		<![CDATA[
+			import mx.messaging.channels.HTTPChannel;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			import mx.controls.TextInput;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			import mx.controls.ProgressBar;
+			import configuracion.ConfigGlobal;
+			
+			private var miHttp:HTTPService;
+			private var barraCarga:ProgressBar;
+			//id de area
+			private var _id:String;
+			private var _nombre:String;
+			private var _descripcion:String;
+			private var modo = FormTipoDocumento.MODO_NUEVO;
+			private static const MODO_EDICION:String="modo_edicion";
+			private static const MODO_NUEVO:String="modo_nuevo";
+			private var _labelBtnRegistrar:String;
+			
+			private function  main():void
+			{
+				this.init();
+			}
+			
+			private function init():void{
+				//estableciendo HttpService
+				this.miHttp=new HTTPService();
+				this.miHttp.url= ConfigGlobal.getUrlGlobal();
+				this.miHttp.method= "POST";
+				this.miHttp.resultFormat= HTTPService.RESULT_FORMAT_TEXT;
+				this.miHttp.addEventListener(ResultEvent.RESULT,this.alObtenerRespuesta);
+				this.miHttp.addEventListener(FaultEvent.FAULT,this.alFallarRespuesta);
+				this.txtNombre.addEventListener(Event.CHANGE,this._txtNombre_CHANGE);
+				this.txtDescripcion.addEventListener(Event.CHANGE, this._txtDescripcion_CHANGE);
+			}
+			
+			public function registrar(){
+				
+				//Parametros a enviar
+				var parametros:Object=new Object();
+				parametros.id=this._id;
+				parametros.nombre=this._nombre;
+				parametros.descripcion=this._descripcion;
+				switch(this.modo)
+				{
+					case FormTipoDocumento.MODO_NUEVO:
+						parametros.registrar='tipoDocumento';
+					break;
+					
+					case FormTipoDocumento.MODO_EDICION:
+						parametros.actualizar='tipoDocumento';
+					break;
+				}
+				
+				//Enviando parametros
+				this.miHttp.send(parametros);
+				
+				
+			}
+			private function _txtNombre_CHANGE(e:Event):void{
+				this._nombre = this.txtNombre.text; 
+			}
+			
+			private function _txtDescripcion_CHANGE(e:Event):void{
+				this._descripcion = this.txtDescripcion.text; 
+			}
+			
+			
+			private function alObtenerRespuesta(e:ResultEvent):void{
+				Alert.show(e.result.toString());
+			}
+			
+			private function alFallarRespuesta(e:FaultEvent):void{
+				
+				
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				
+				this.lblMensaje.text="Error: Al solicitar respuesta del servidor.";
+				
+			}
+			
+
+			
+			private function estaLlenadoCorrectamente():Boolean{
+				var estado:Boolean =true;
+				
+				if(this._nombre == ""){
+					this.txtNombre.errorString = "ingrese un nombre ";
+					estado = false; 
+				}
+				return estado;
+				
+			}
+			
+			public function set_modo_edicion():void{
+				if(this._id){
+					this.modo=FormTipoDocumento.MODO_EDICION;
+					this._nombre = "";
+					this._descripcion = "";	
+					this._labelBtnRegistrar = "Actualizar";
+					this.cargarElemento();
+					
+				}else{
+					Alert.show("No se a definido id de elemento a editar");
+				}
+			}
+			
+			public function set_modo_nuevo():void{
+				this.modo = FormTipoDocumento.MODO_NUEVO;
+				this._nombre = "";
+				this._descripcion = "";	
+				this._labelBtnRegistrar = "Registrar";
+				this.enabled=true;
+				this.redibujar();
+			}
+			
+			private function redibujar(){
+					this.txtNombre.text = this._nombre;
+					this.txtDescripcion.text = this._descripcion;
+					this.btnRegistrar.label = this._labelBtnRegistrar;
+			}
+			
+			private function cargarElemento()
+			{
+				if(this._id){
+					var http:HTTPService=new HTTPService();
+					//estableciendo HttpService
+					http =new HTTPService();
+					http.url = ConfigGlobal.getUrlGlobal();
+					http.method = "POST";
+					http.resultFormat = HTTPService.RESULT_FORMAT_TEXT;
+					http.addEventListener(ResultEvent.RESULT,this.alCargarElemento);
+					http.addEventListener(FaultEvent.FAULT,this.alFallarCargaElemento);
+					
+					//estableciendo parametros
+					var parametros:Object = new Object();
+					parametros.mostradorXml="tipoDocumento";
+					parametros.id=this._id;
+					http.send(parametros);
+				}else{
+					Alert.show("No se especifio id de Elemento a cargar");
+				}
+			}
+			
+			private function alCargarElemento(e:ResultEvent):void
+			{	
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				
+				var XmlElemento:XML = new XML(e.result);
+				
+				this._nombre=XmlElemento.child('Nombre');
+				this._descripcion=XmlElemento.child('Descripcion');
+				this.redibujar();
+				
+			}
+			
+			private function alFallarCargaElemento(e:FaultEvent):void
+			{
+				Alert.show("fallo al cargar este elemento");	
+			}
+			
+			public function setId(valor:String):void
+			{
+				this._id = valor;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Label x="10" y="29" text="Nombre de tipo"/>
+	<mx:TextInput x="115" y="27" id="txtNombre" />
+	<mx:Label x="41" y="67" text="descripcion"/>
+	<mx:TextArea x="115" y="66" width="160" height="31" themeColor="#0CACE7" id="txtDescripcion" backgroundAlpha="1.0"/>
+	<mx:Button x="170" y="105" id="btnRegistrar" width="110"  click="this.registrar();" icon="@Embed(source='../recursos/img/mini_guardar.png')"/>
+	<mx:Label x="0" y="0" id="lblMensaje" width="290"/>
+
+</mx:Canvas>

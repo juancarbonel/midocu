@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="362" height="262" xmlns:ns1="componentes.*" creationComplete="this.main()" creationCompleteEffect="Fade">
+	<mx:Button x="10" y="43" label="Encontrar" id="btnEncontrar" click="this.btnEncontrar_CLICK()" icon="@Embed(source='../recursos/img/mini_lupa.png')"/>
+	<mx:Label x="13" y="17" text="Buscar por:"/>
+	<mx:TextInput x="118" y="43" id="txtCriterio"/>
+	<ns1:DatagridRemitentes x="10" y="73" width="342" height="165" id="dgRemitentes"/>
+	<mx:ComboBox x="100" y="15" width="132" id="cboTipoBusqueda">
+		<mx:dataProvider>
+			<mx:ArrayCollection>
+				<mx:Object label="nombre"/>
+				<mx:Object label="email"/>
+			</mx:ArrayCollection>
+		</mx:dataProvider>
+	</mx:ComboBox>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.effects.Fade;
+			import mx.effects.Effect;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.http.HTTPService;
+			
+			private var _http:HTTPService;
+			
+			private function main():void{
+				this.init();
+			
+			}
+			
+			private function init():void{
+			
+				
+				this._http=new HTTPService();
+				this._http.method = "POST";
+				this._http.url = ConfigGlobal.getUrlGlobal();
+				this._http.resultFormat = HTTPService.RESULT_FORMAT_TEXT;
+				this._http.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttp);
+				this._http.addEventListener(FaultEvent.FAULT,this.alFallarRepuestaHttp);
+				
+				this.txtCriterio.addEventListener(KeyboardEvent.KEY_DOWN,this.txtCriterio_KEYBOARD_DOWN);
+				this.cargar();
+			}
+			
+			private function txtCriterio_KEYBOARD_DOWN(e:KeyboardEvent):void{
+				if(e.charCode==13){
+					this.btnEncontrar_CLICK();
+				}
+			}
+			
+			private function alObtenerRespuestaHttp(e:ResultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				Alert.show(e.result.toString());
+				var XmlRemitentes:XMLList = new XMLList(e.result);
+				this.dgRemitentes.dataProvider=XmlRemitentes.Remitente;
+			}
+			
+			public function cargar():void{
+				this.dgRemitentes.cargar();
+			}
+			
+			private function alFallarRepuestaHttp(e:FaultEvent):void{
+				Alert.show(e.fault.toString());	
+			}
+			
+			private function btnEncontrar_CLICK():void{
+				
+				this.encontrarRemitente();
+			}
+			
+			private function encontrarRemitente():void{
+				var parametros:Object=new Object();
+				parametros.mostradorXml='remitentesEncontradosBuscador';
+				
+				switch(this.cboTipoBusqueda.selectedIndex){
+					case 0:
+						parametros.nombreRemite = this.txtCriterio.text;
+					break;
+						
+					case 1:
+						parametros.email = this.txtCriterio.text;
+					break;
+				
+				}
+				
+				this._http.send(parametros);	
+			}
+			
+		
+		]]>
+	</mx:Script>
+	<mx:Button x="311" y="235" width="39" click="this.cargar()">
+		<mx:icon>@Embed(source='../recursos/img/mini_refrescar.gif')</mx:icon>
+	</mx:Button>
+</mx:Canvas>

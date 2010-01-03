@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="282" height="132">
+		<mx:Script>
+		<![CDATA[
+			import mx.messaging.channels.HTTPChannel;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			import mx.controls.TextInput;
+			import mx.controls.Alert;
+			import mx.managers.PopUpManager;
+			import mx.controls.ProgressBar;
+			import configuracion.ConfigGlobal;
+			
+			private var miHttp:HTTPService;
+			private var _idAsunto:String;
+			private var barraCarga:ProgressBar;
+			
+			public function registrar(){
+				if(this._idAsunto!=null){
+				
+				this.set_modoRegistrando();
+				
+				//estableciendo HttpService
+				this.miHttp=new HTTPService();
+				this.miHttp.url= ConfigGlobal.getUrlGlobal();
+				this.miHttp.method= "POST";
+				this.miHttp.resultFormat= HTTPService.RESULT_FORMAT_TEXT;
+				this.miHttp.addEventListener(ResultEvent.RESULT,this.alObtenerRespuesta);
+				this.miHttp.addEventListener(FaultEvent.FAULT,this.alFallarRespuesta);
+				
+				//Parametros a enviar
+				var parametros:Object=new Object();
+				parametros.registrar='requisitoAsunto';
+				parametros.idAsunto=this._idAsunto;
+				parametros.nombre=this.txtNombre.text;
+				parametros.descripcion=this.txtDescripcion.text;
+				
+				//Enviando parametros
+				this.miHttp.send(parametros);
+				}else{
+					Alert.show('error al registrar, no se establecio idAsunto');
+				}
+				
+			}
+			private function set_modoRegistrando(){
+				this.lblMensaje.text="";
+				this.inhabilitarControles();
+				this.barraCarga=new ProgressBar();
+				this.barraCarga.label= "guardando";
+				this.barraCarga.indeterminate=true;
+				this.addChild(this.barraCarga);
+			}
+			
+			private function set_modoTerminaRegistrando(){
+
+				this.removeChild(this.barraCarga);
+				this.habilitarControles();
+				this.reiniciarControles();
+			}
+			
+			private function alObtenerRespuesta(e:ResultEvent):void{
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+			
+				this.lblMensaje.text=e.result.toString();
+				this.set_modoTerminaRegistrando();
+			}
+			
+			private function alFallarRespuesta(e:FaultEvent):void{
+				
+			
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				
+				this.lblMensaje.text="Error: Al solicitar respuesta del servidor.";
+				this.set_modoTerminaRegistrando();
+			}
+			
+			
+			private function inhabilitarControles():void{
+				this.txtNombre.enabled=false;
+				this.txtDescripcion.enabled=false;
+				
+			}
+			
+			private function habilitarControles():void{
+				this.txtNombre.enabled=true;
+				this.txtDescripcion.enabled=true;
+			}
+			
+			private function reiniciarControles():void{
+				this.txtNombre.text="";
+				this.txtDescripcion.text="";
+			}
+			
+			public function set IdAsunto(valor:String){
+				this._idAsunto = valor;
+			}
+			
+			public function get IdAsunto():String{
+				return this._idAsunto;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Label x="3" y="29" text="Nombre de requisito"/>
+	<mx:TextInput x="119" y="27" id="txtNombre" width="157"/>
+	<mx:Label x="41" y="67" text="descripcion"/>
+	<mx:TextArea x="115" y="66" width="160" height="31" themeColor="#0CACE7" id="txtDescripcion"/>
+	<mx:Button x="203" y="105" label="Guardar" click="this.registrar()"/>
+	<mx:Label x="0" y="0" id="lblMensaje" width="282"/>
+
+</mx:Canvas>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="500" height="342" xmlns:ns1="componentes.*" creationComplete="this.main();">
+	<mx:ApplicationControlBar x="10" y="10" width="471" height="260">
+		<ns1:DatagridMensajesChat width="384" height="210"  id="grillaMensajes"/>
+	</mx:ApplicationControlBar>
+	<mx:ApplicationControlBar x="10" y="289" width="377" height="43">
+		<mx:TextArea width="360" height="32" id="txtMensaje" keyUp="this.txtMensajes_KEY_UP(event)"/>
+	</mx:ApplicationControlBar>
+	<mx:Button x="395" y="289" label="Enviar" width="76" height="43" id="btnEnviar" click="this.btnEnviar_CLICK(event)"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.http.HTTPService;
+			
+			public function main()
+			{
+				/**
+				 * Cuando cargo interfaz, entonces  cargamos nuestra
+				 * lista de mensajes 
+				 */
+				this.grillaMensajes.cargar();
+			}
+			
+			private function txtMensajes_KEY_UP(e:KeyboardEvent){
+				/**
+				* SI presiono tecla [ENTER]
+				*/
+				if(e.keyCode==13){
+					this.enviarMensajeChat(this.txtMensaje.text);
+					this.txtMensaje.text="";
+				}
+				
+			}
+			
+			private function btnEnviar_CLICK(e:MouseEvent):void
+			{
+				/**
+				/cuando presiones boton CLICK, envia mensaje
+				*/
+				this.enviarMensajeChat(this.txtMensaje.text);
+				this.txtMensaje.text="";
+			}
+			private function enviarMensajeChat(contenido:String):void
+			{
+			
+				/**
+				 *establecemos parametros de solicitud HTTP 
+				 */
+				 
+				var http:HTTPService = new HTTPService();
+				http.url = ConfigGlobal.getUrlGlobal();
+				http.method = "POST";
+				http.resultFormat = HTTPService.RESULT_FORMAT_TEXT;
+				var parametros:Object=new Object();
+				parametros.registrar="mensajeChat";
+				parametros.mensaje=contenido;
+				
+				/**
+				*Enviamos parametros para registrar mensaje en chat 
+				*/
+				http.send(parametros);
+				
+			}
+			
+			public function http_RESULT(e:ResultEvent){
+				/**
+				* Muestra result, cuando se esta depurando
+				*/
+				if(ConfigGlobal.getDebug()==true){
+					Alert.show(e.result.toString());
+				}
+			}
+			
+			public function http_Fault(e:FaultEvent)
+			{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());				
+				}
+				Alert.show("error al cargar mensajes");
+			}
+		]]>
+	</mx:Script>
+	
+</mx:Canvas>

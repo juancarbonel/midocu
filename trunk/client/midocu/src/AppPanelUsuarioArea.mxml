@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" xmlns:ns1="componentes.*" creationComplete="this.main()"  xmlns:ns2="*" backgroundGradientAlphas="[1.0, 1.0]" backgroundGradientColors="[#0F3552, #1298D0]" >
+	<mx:Script>
+		<![CDATA[
+			import flash.net.navigateToURL;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.http.HTTPService;
+			
+			//atributos
+			private var http:HTTPService;
+			
+			private function main():void{
+				this.init();
+			}
+			
+			private function init():void{
+					
+			}
+			
+			private function canvasPrincipal_SHOW():void{
+				var urlPanelUsuario:URLRequest = new URLRequest();
+				urlPanelUsuario.url = ConfigGlobal.getUrlGlobal()+"?modulo=panelUsuario";
+				navigateToURL(urlPanelUsuario,'_SELF');
+				
+			}
+			
+			
+		]]>
+	</mx:Script>
+	<mx:Panel width="910" height="104" layout="absolute" verticalScrollPolicy="off" horizontalAlign="left" creationCompleteEffect="WipeLeft">
+		<ns1:LogoCabecera width="417" height="64" verticalScrollPolicy="off" x="0" y="0">
+		</ns1:LogoCabecera>
+		<ns1:CanvasCerrarSession x="774" y="0">
+		</ns1:CanvasCerrarSession>
+	</mx:Panel>
+	<mx:ApplicationControlBar width="911" height="44" creationCompleteEffect="Zoom">
+		<mx:ToggleButtonBar dataProvider="viewPrincipal" width="567" height="32" selectedIndex="1">
+		</mx:ToggleButtonBar>
+	</mx:ApplicationControlBar>
+
+		<mx:ViewStack x="0" y="0" id="viewPrincipal" width="906"  height="579" creationCompleteEffect="WipeDown">
+			<mx:Canvas label="Principal" width="100%" height="100%" id="canvasPrincipal" show="this.canvasPrincipal_SHOW()">
+			</mx:Canvas>
+			
+			<mx:Canvas width="100%" height="100%" id="canvasDocumento" label="Documento" showEffect="WipeDown" hideEffect="WipeUp">
+				<mx:Panel width="906" >
+				<ns1:CanvasDocumento width="100%">
+					
+				</ns1:CanvasDocumento>
+				</mx:Panel>
+			</mx:Canvas>
+			
+			
+			<mx:Canvas label="Remitente" width="100%" height="100%" id="canvasRemitente" showEffect="WipeDown" hideEffect="WipeUp">
+				<mx:Panel width="100%" >
+					<ns1:CanvasRemitente x="0" y="0" width="848" height="539">
+					</ns1:CanvasRemitente>	
+				</mx:Panel>
+			</mx:Canvas>
+			
+			<mx:Canvas label="BandejaEntrada" width="100%" height="100%" creationComplete="this.bandejaEntrada.cargarConfig()" showEffect="WipeDown" hideEffect="WipeUp">
+				<mx:Panel  width="100%">
+					<ns1:CanvasBandejaDocumentosAreaConectadoUsuario x="10" y="10" id="bandejaEntrada" height="421">
+					</ns1:CanvasBandejaDocumentosAreaConectadoUsuario>
+				</mx:Panel>
+			</mx:Canvas>
+			
+		</mx:ViewStack>
+	
+	
+</mx:Application>

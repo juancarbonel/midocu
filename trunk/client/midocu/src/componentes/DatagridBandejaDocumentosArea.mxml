@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" width="524" creationComplete="this.main()">
+	<mx:columns>
+		<mx:DataGridColumn headerText="Remitente"   dataField="NombreRemite" width="150">
+		
+		</mx:DataGridColumn>
+		<mx:DataGridColumn headerText="Asunto" dataField="NombreAsunto" width="300">
+		
+		</mx:DataGridColumn>
+		<mx:DataGridColumn headerText="Fecha" dataField="Fecha" width="120">
+		</mx:DataGridColumn>
+	</mx:columns>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;
+			import mx.rpc.http.HTTPService;
+			import configuracion.ConfigGlobal;
+			
+			private var _http:HTTPService;
+			private var _idArea:String;
+			private function main(){
+				this.init();
+			}
+			
+			private function init(){
+				
+			}
+			
+			
+			public function set IdArea(valor:String):void{
+				this._idArea = valor;
+			}
+			
+			public function get IdDocumentoSeleccionado(){
+				return this.selectedItem.IdDocumento;
+			}
+			
+			
+			
+		]]>
+	</mx:Script>
+</mx:DataGrid>

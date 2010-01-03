@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="592" height="410" xmlns:ns1="componentes.*" creationComplete="this.main()">
+	<mx:Panel x="10" y="10" width="582" height="388" layout="absolute" title="Bandeja de Documentos">
+		<ns1:DatagridBandejaDocumentosArea x="0" y="38" width="562" height="236" id="dgBandejaDocumentos" doubleClickEnabled="true"/>
+		<mx:ApplicationControlBar x="0" y="301" width="562">
+			<mx:Label text="Filtrar por:"/>
+			<mx:ComboBox id="cboTipoCriterio">
+				<mx:ArrayCollection>
+					<mx:Object label="idDocumento"/>
+					<mx:Object label="remitente"/>
+				</mx:ArrayCollection>			
+			</mx:ComboBox>
+			<mx:TextInput id="txtCriterio"/>
+			<mx:Button label="Filtrar" id="btnFiltrar" click="this.filtrarDocumentos()" icon="@Embed(source='../recursos/img/mini_lupa.png')"/>
+		</mx:ApplicationControlBar>
+		<mx:ApplicationControlBar width="562">
+			<mx:ComboBox id="cboTipoBandeja">
+				<mx:ArrayCollection>
+					<mx:Object label="Derivados a esta area">
+						
+					</mx:Object>
+					
+					<mx:Object label="Recepcionados por esta area">
+						
+					</mx:Object>
+					
+				</mx:ArrayCollection>
+			</mx:ComboBox>
+			<mx:Label text="para visualizar doc. Doble Clic sobre el elemento"/>
+		</mx:ApplicationControlBar>
+		<mx:Button labelPlacement="left" x="35" y="276" icon="@Embed(source='../recursos/img/pag_next.gif')" width="29"/>
+		<mx:Button label=" " labelPlacement="right" x="0" y="276" width="27" icon="@Embed(source='../recursos/img/pag_prev.gif')"/>
+	</mx:Panel>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import mx.rpc.http.HTTPService;
+			
+			import componentes.CanvasDocumentoElementoBandeja;
+			import componentes.Ventana;
+			import mx.controls.List;
+			import mx.events.ListEvent;
+			import mx.controls.Alert;
+			import componentes.FormArea;
+			import mx.containers.TitleWindow;
+			import componentes.FormNuevoDocumentoTramite;
+			import mx.containers.Form;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.events.FaultEvent;
+			import configuracion.ConfigGlobal;
+			
+			private var _httpBandejaEntradaArea:HTTPService;
+			private var _httpBandejaDocumentosRecepArea:HTTPService;
+			private var _idArea:String;
+			private var _intervaloTiempoRecargaBandeja:uint = 5000;
+			private var _temporizadorRecargaBandeja:Timer;
+			
+			private function main(){
+				
+				this.init();
+				
+				
+		
+			}
+			
+			private function init():void{
+			  /***********************************
+			  *	preparando dgBandejaDocumentos
+			  **********************************/
+			  	this.dgBandejaDocumentos.IdArea = this._idArea;
+				this.dgBandejaDocumentos.addEventListener(ListEvent.ITEM_DOUBLE_CLICK,this.alDobleClicElemento);
+				
+				
+			 /**************************************
+			  *	preparando _httpBandejaEntradaArea
+			  **************************************/
+			 this._httpBandejaEntradaArea=new HTTPService();
+			 this._httpBandejaEntradaArea.method="POST";
+			 //this._httpBandejaEntradaArea.resultFormat = HTTPService.RESULT_FORMAT_E4X;
+			 this._httpBandejaEntradaArea.resultFormat = HTTPService.RESULT_FORMAT_TEXT;
+			 this._httpBandejaEntradaArea.url =  ConfigGlobal.getUrlGlobal();
+			 this._httpBandejaEntradaArea.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttpBandejaEntradaArea);
+			 this._httpBandejaEntradaArea.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttpBandejaEntradaArea);
+			 /**************************************
+			  *	preparando _httpBandejaDocumentosRecepArea
+			  **************************************/
+			  this._httpBandejaDocumentosRecepArea=new HTTPService();
+			  this._httpBandejaDocumentosRecepArea.method="POST";
+			  //this._httpBandejaDocumentosRecepArea.resultFormat = HTTPService.RESULT_FORMAT_E4X;
+			  this._httpBandejaDocumentosRecepArea.resultFormat = HTTPService.RESULT_FORMAT_TEXT;
+			  this._httpBandejaDocumentosRecepArea.url = ConfigGlobal.getUrlGlobal();
+			  this._httpBandejaDocumentosRecepArea.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttpBandejaDocumentosRecepArea);
+			  this._httpBandejaDocumentosRecepArea.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttpBandejaDocumentosRecepArea);
+			 
+			 
+			 /**************************************
+			  *	preparando cboTipoBandeja
+			  **************************************/
+			  this.cboTipoBandeja.addEventListener(Event.CHANGE,this.cboTipoBandeja_CHANGE);
+			  	 
+			 /*************************************
+			 * preparando btnFiltrar
+			 * ************************************/
+			 this.btnFiltrar.addEventListener(KeyboardEvent.KEY_DOWN,this.btnFiltrar_KEYDOWN);
+			 
+			 /***************************************
+			 *  preparando temporizadorRecargaBandeja
+			 * **************************************/
+			 this._temporizadorRecargaBandeja = new Timer(this._intervaloTiempoRecargaBandeja);
+			 this._temporizadorRecargaBandeja.addEventListener(TimerEvent.TIMER,this.temporizasor_TICK);
+			 this._temporizadorRecargaBandeja.start();
+			}
+			
+			private function btnFiltrar_KEYDOWN(e:KeyboardEvent):void{
+				if(e.charCode ==13){
+					this.filtrarDocumentos();
+			
+				}
+			}
+			
+			private function temporizasor_TICK(e:TimerEvent){
+				this.recargarBandeja();
+			}
+		
+			private function cboTipoBandeja_CHANGE(e:ListEvent):void{
+				
+				this.txtCriterio.text="";
+				this.recargarBandeja();
+			}
+			
+			private function recargarBandeja(){
+				
+				//Alert.show('recargado');
+				switch(this.cboTipoBandeja.selectedIndex){
+					case 0:
+						this.cargarBandejaEntrada();
+					break;
+					
+					case 1:
+						this.cargarBandejaDocumentosRecepcionadosArea();
+					break;
+					default :
+					Alert.show('Opcion desconocida, imposible cargar documentos');
+				}
+			}
+			
+			
+			
+			private function alDobleClicElemento(e:ListEvent):void{
+				
+			
+				var unaVentana:Ventana=new Ventana();
+				var elementoDoc:CanvasDocumentoElementoBandeja=new CanvasDocumentoElementoBandeja();
+				var idSeleccionado:String=this.dgBandejaDocumentos.IdDocumentoSeleccionado;
+				
+				try
+				{	
+				unaVentana.padre=this;
+				unaVentana.addChild(elementoDoc);
+				unaVentana.mostrar();
+				unaVentana.x = (parentApplication.width/2)-(unaVentana.width/2);	
+				elementoDoc.IdDocumento=idSeleccionado;
+				}catch(e:Error){
+				 Alert.show(e.toString());
+				}
+			}
+			
+			
+			
+			
+			
+			public function set IdArea(valor:String){
+				this._idArea = valor;
+			}
+			
+			public function cargarBandejaEntrada():void{
+				if(this._idArea!=null)
+				{	var parametros:Object=new Object(); 
+					parametros.mostradorXml="bandejaEntradaArea";
+					parametros.idArea=this._idArea;
+					
+					switch(this.cboTipoCriterio.selectedIndex){
+						/**
+					 	 * Si selecciono filtro por idDocumento
+					 	 **/
+						case 0:
+							parametros.filtIdDocumento = this.txtCriterio.text;
+						break
+						
+						/**
+					 	 * Si selecciono filtro por remitente
+					 	 **/
+					 	 case 1:
+					 	 	parametros.filtNombreRemite  = this.txtCriterio.text;
+					 	 break;
+
+					}
+					
+					this._httpBandejaEntradaArea.send(parametros);
+					
+				}else{
+					Alert.show("Error:imposible cargar, Area Desconocida");
+				}
+			}
+			
+			public function cargarBandejaDocumentosRecepcionadosArea():void{
+				if(this._idArea!=null)
+				{	var parametros:Object=new Object(); 
+					parametros.mostradorXml="bandejaDocumentosRecepArea";
+					parametros.idArea=this._idArea;
+					
+					switch(this.cboTipoCriterio.selectedIndex){
+						/**
+					 	 * Si selecciono filtro por idDocumento
+					 	 **/
+						case 0:
+							parametros.filtIdDocumento = this.txtCriterio.text;
+						break
+						
+						/**
+					 	 * Si selecciono filtro por remitente
+					 	 **/
+					 	 case 1:
+					 	 	parametros.filtNombreRemite = this.txtCriterio.text;
+					 	 break;
+					}
+					
+					
+					this._httpBandejaDocumentosRecepArea.send(parametros);
+					
+				}else{
+					Alert.show("Error:imposible cargar, Area Desconocida");
+				}
+			}
+			
+			
+			private function alObtenerRespuestaHttpBandejaDocumentosRecepArea(e:ResultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				var xmlElementoDetalle:XMLList = new XMLList(e.result.toString());
+				this.dgBandejaDocumentos.dataProvider = xmlElementoDetalle.ElementoDetalle;
+			}
+			
+			private function alFallarRespuestaHttpBandejaDocumentosRecepArea(e:FaultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.toString());
+				}
+				
+				Alert.show('error al cargar bandeja de documentos recepcionados');
+			}
+			
+			private function alObtenerRespuestaHttpBandejaEntradaArea(e:ResultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				var xmlElementoDetalle:XMLList = new XMLList(e.result.toString());
+				this.dgBandejaDocumentos.dataProvider = xmlElementoDetalle.ElementoDetalle;
+			}
+			
+			private function alFallarRespuestaHttpBandejaEntradaArea(e:FaultEvent):void{
+				Alert.show('error al cargar bandeja de entrada');
+			}
+			
+			public function filtrarDocumentos():void{
+				switch(this.cboTipoBandeja.selectedIndex){
+					case 0:
+						this.cargarBandejaEntrada();
+					break;
+					
+					case 1:
+						this.cargarBandejaDocumentosRecepcionadosArea();
+					break;
+					
+					default :
+						Alert.show('Error inesperado, bandeja de documentos desconocida');
+				}
+			
+			}
+			
+			
+		]]>
+	</mx:Script>
+	
+</mx:Canvas>

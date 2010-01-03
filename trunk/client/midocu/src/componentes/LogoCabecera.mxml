@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="364" height="72" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+	<mx:SWFLoader x="4" y="3" source="recursos/swf/cabecera_web_animada.swf" scaleContent="true" height="70" width="273"/>
+</mx:Canvas>

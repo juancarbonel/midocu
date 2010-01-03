@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" width="454" creationComplete="this.main()">
+	<mx:columns>
+		<mx:DataGridColumn headerText=""   dataField="Contenido" width="300">
+		
+		</mx:DataGridColumn>
+		
+			
+	</mx:columns>
+	
+	<mx:Script>
+		<![CDATA[
+			/**
+			 * 
+			 *  Incluimos paquetes necesarios
+			 * 
+			 * */
+			import mx.controls.Alert;
+			import mx.rpc.http.HTTPService;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.events.FaultEvent;
+			import configuracion.ConfigGlobal;
+			
+			
+			/**
+			 * Usado para comunicarse con servidor
+			 * */
+			private var _http: HTTPService;
+			
+			/**
+			 * Temporizador, usado para recargo de mensajes
+			 * */
+			private var _tiempo:Timer;
+			
+			
+			private function main():void{
+				this.init();
+			}
+			
+			private function init():void{
+				/**
+				* Construimos nuestra solicitud HTTP
+				*/
+				this._http=new HTTPService();
+				this._http.method="POST";
+				
+				/**
+				*Establecemos recepcion de datos tipo Ecma para XML
+				*/
+				this._http.resultFormat= HTTPService.RESULT_FORMAT_E4X;
+				
+				this._http.url=ConfigGlobal.getUrlGlobal();
+				this._http.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttp);
+				this._http.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttp);
+				
+				/**
+				* se actualiza cada 2000 milisegundos
+				*/
+				 this._tiempo = new Timer(2000);
+				 
+				 /**
+				 * 
+				 * establecemos proceso, tiempo_TICK 
+				 * (momento que recargara lista de mensajes)
+				 *  
+				 * */
+				 this._tiempo.addEventListener(TimerEvent.TIMER,this.tiempo_TICK);
+				 
+				 /**
+				 * Inicializamos temporizador
+				 * */
+				 
+			 	 this._tiempo.start();
+			}
+			
+			
+			/**
+			 * invoca el recargo de mensajes
+			 * */
+			
+			public function tiempo_TICK(e:TimerEvent) {
+				this.cargar();
+			}
+			
+			public function cargar():void{
+				/**
+				 * Establecemos parametros
+				 * */
+				var parametros:Object = new Object();
+				parametros.mostradorXml="mensajesChat";
+				this._http.send(parametros);
+			}
+			
+			private function alObtenerRespuestaHttp(e:ResultEvent):void{
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				this.dataProvider=e.result.Mensaje;
+			}
+			
+			private function alFallarRespuestaHttp(e:FaultEvent):void{
+				
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				
+				
+				Alert.show("Error al cargar");
+			}
+			
+			
+			
+			
+			
+		]]>
+	</mx:Script>
+</mx:DataGrid>
