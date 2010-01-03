@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" height="472" width="362" creationComplete="this.main()" horizontalScrollPolicy="off" verticalScrollPolicy="off">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.StateChangeEvent;
+			import mx.messaging.AbstractConsumer;
+			import mx.events.CalendarLayoutChangeEvent;
+			
+			import libs.Validador;
+			import mx.validators.EmailValidator;
+			import mx.formatters.Formatter;
+			import mx.utils.StringUtil;
+			import mx.rpc.http.HTTPService;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.controls.Alert;
+			import configuracion.ConfigGlobal;
+			//atributos
+			private var httpRegistrar:HTTPService;
+			private var httpEditar:HTTPService;
+			private var httpCargarUsuario:HTTPService;
+			
+			private var _idUsuario:String;
+			private var _email:String;
+			private var logintudMinimaPassword:int = 6;
+			private var _passwordCambiada:Boolean=false;
+			private var _password:String;
+			private var _nombres:String;
+			private var _apellidos:String;
+			private var _sexo:String;
+			private var _telefono:String;
+			private var _domicilio:String;
+			private var _fechaNac:Date;
+			private static const _MODO_NUEVO="nuevo";
+			private static const _MODO_EDITAR="editar";
+			private var _MODO:String = FormNuevoUsuario._MODO_NUEVO;
+			
+			
+			private function main():void{
+				this.init();
+			}
+			
+			private function init():void{
+				//estableciendo httpRegistrar
+				this.httpRegistrar=new HTTPService();
+				this.httpRegistrar.resultFormat=HTTPService.RESULT_FORMAT_TEXT;
+				this.httpRegistrar.url= ConfigGlobal.getUrlGlobal();
+				this.httpRegistrar.method="POST";
+				this.httpRegistrar.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttpRegistrar);
+				this.httpRegistrar.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttpRegistrar);
+				
+				//estableciendo httpEditar
+				this.httpEditar=new HTTPService();
+				this.httpEditar.resultFormat=HTTPService.RESULT_FORMAT_TEXT;
+				this.httpEditar.url= ConfigGlobal.getUrlGlobal();
+				this.httpEditar.method="POST";
+				this.httpEditar.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttpEditar);
+				this.httpEditar.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttpEditar);
+				
+				//estableciendo httpCargarUsuario
+				this.httpCargarUsuario=new HTTPService();
+				this.httpCargarUsuario.resultFormat=HTTPService.RESULT_FORMAT_TEXT;
+				this.httpCargarUsuario.url= ConfigGlobal.getUrlGlobal();
+				this.httpCargarUsuario.method="POST";
+				this.httpCargarUsuario.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttpCargarUsuario);
+				this.httpCargarUsuario.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttpCargarUsuario);
+				
+				//estableciendo controles
+				this.txtEmail.addEventListener(Event.CHANGE,this.txtEmail_CHANGE);
+				this.txtPassword.addEventListener(Event.CHANGE,this.txtPassword_CHANGE);
+				this.txtNombres.addEventListener(Event.CHANGE, this.txtNombres_CHANGE);
+				this.txtApellidos.addEventListener(Event.CHANGE, this.txtApellidos_CHANGE);
+				this.chkFemenino.addEventListener(StateChangeEvent.CURRENT_STATE_CHANGE,this.radSexo_CHANGE);
+				this.txtTelefono.addEventListener(Event.CHANGE,this.txtTelefono_CHANGE);
+				this.txtDomicilio.addEventListener(Event.CHANGE, this.txtDomicilio_CHANGE);
+				this.txtFechaNac.addEventListener(Event.CHANGE,this.txtFechaNac_CHANGE);
+				this.redibujar();
+			}
+			
+			public function cargarUsuario():void{
+				if(this._idUsuario !=null){
+					var parametros:Object= new Object();
+					parametros.mostradorXml = 'usuario';
+					parametros.idUsuario = this._idUsuario;
+					this.httpCargarUsuario.send(parametros);
+				
+				}else{
+					Alert.show('no se establecio idUsuario');
+				}
+			}
+			
+			private function txtEmail_CHANGE(e:Event):void{
+				this._email= this.txtEmail.text;
+			}
+			
+			private function txtPassword_CHANGE(e:Event){
+				this._password = this.txtPassword.text;
+				this._passwordCambiada = true;
+			}
+			
+			private function txtNombres_CHANGE(e:Event){
+				this._nombres = this.txtNombres.text;
+			}
+			
+			private function txtApellidos_CHANGE(e:Event){
+				this._apellidos = this.txtApellidos.text;
+			}
+			
+			private function txtTelefono_CHANGE(e:Event){
+				this._telefono = this.txtTelefono.text;
+			
+			}
+			
+			private function txtDomicilio_CHANGE(e:Event){
+				this._domicilio = this.txtDomicilio.text;
+			}
+			
+			private function txtFechaNac_CHANGE(e:Event){
+				this._fechaNac = this.txtFechaNac.selectedDate;
+			}
+			
+			private function radSexo_CHANGE(e:Event){
+				if(this.chkMasculino.selected == true){
+					this._sexo = "1";
+				}else{
+					this._sexo = "0";
+				}
+			}
+			
+			
+			
+			private function alObtenerRespuestaHttpRegistrar(e:ResultEvent):void{
+				this.set_modo_registrando(false);
+				Alert.show(e.result.toString());
+					
+			}
+			private function alFallarRespuestaHttpRegistrar(e:FaultEvent):void{
+				this.set_modo_registrando(false);
+				Alert.show("Fallo al guardar");
+			}
+			
+			private function alObtenerRespuestaHttpEditar(e:ResultEvent):void{
+				this.set_modo_registrando(false);
+				Alert.show(e.result.toString());
+					
+			}
+			private function alFallarRespuestaHttpEditar(e:FaultEvent):void{
+				this.set_modo_registrando(false);
+				Alert.show("Fallo al guardar");
+			}
+			
+			private function alObtenerRespuestaHttpCargarUsuario(e:ResultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				this.set_modo_registrando(false);
+
+				
+				var XmlDatos:XML = new XML(e.result.toString());
+				
+				if(XmlDatos.child('Id').toString()!="")
+				{
+					this._idUsuario=XmlDatos.child('Id').toString();
+					this._nombres = XmlDatos.child('Nombres').toString();
+					this._apellidos = XmlDatos.child('Apellidos').toString();
+					this._sexo = XmlDatos.child('Sexo').toString();
+					this._domicilio = XmlDatos.child('Domicilio').toString();
+					this._telefono = XmlDatos.child('Telefono').toString();
+					this._email= XmlDatos.child('Email').toString();
+					this.redibujar();
+				}else{
+					Alert.show('no eixste id');
+				}
+				
+					
+			}
+			private function alFallarRespuestaHttpCargarUsuario(e:FaultEvent):void{
+				this.set_modo_registrando(false);
+				Alert.show("Fallo al cargar datos de usuario");
+			}
+			
+			private function set_modo_registrando(valor:Boolean){
+				if(valor==true){
+					this.viewGeneral.selectedChild=this.canvasCargador;
+				}else{
+					this.viewGeneral.selectedChild=this.canvasPrincipal;
+				}
+				
+			}
+			
+			private function estaLlenadoCorrectamente():Boolean{
+				var estado:Boolean = true;
+				this.lblMensaje.text = "";
+				this.txtEmail.errorString ="";
+				this.txtPassword.errorString = "";
+				this.txtNombres.errorString = "";
+				this.txtApellidos.errorString = "";
+				this.txtDomicilio.errorString = "";
+				this.txtTelefono.errorString = "";
+				
+				
+				
+				
+				
+				if(!Validador.isEmail(this._email)){
+					this.txtEmail.errorString = "Ingrese un email valido";
+					estado = false;
+				}
+				
+				//
+				
+				if(this.txtPassword.text.length < this.logintudMinimaPassword){
+					this.txtPassword.errorString =  "ingrese " + logintudMinimaPassword + " caracteres como minimo ";
+					estado = false;
+				}
+				
+				if(this._nombres == ""){
+					this.txtNombres.errorString = "Ingrese sus nombres";
+					estado = false;
+				}
+				
+				if(this._apellidos == ""){
+					this.txtApellidos.errorString = "Ingrese sus apellidos";
+					estado = false;
+				}
+				
+				return estado;
+			
+			}
+			
+			private function registrar():void{
+				
+				if(this.estaLlenadoCorrectamente()==true)
+				{
+					var parametros:Object= new Object();
+					//armando parametros
+					parametros.registrar="usuario";
+					parametros.nombres=this._nombres;
+					parametros.apellidos=this._apellidos;			
+					parametros.sexo=this._sexo;
+				 	parametros.domicilio=this._domicilio;
+				 	parametros.telefono=this._telefono;
+				 	parametros.email=this._email;
+				 	parametros.password= this._password;
+				 	parametros.fecha_nac= this.convertirFecha(this._fechaNac);
+	
+					//enviamos parametros
+				 	this.httpRegistrar.send(parametros);
+				 	this.set_modo_registrando(true);
+				 	
+				}else{
+					this.lblMensaje.text = "verifique los campos en rojo";
+
+				}
+			}
+			
+			public function set_modo_nuevo():void{
+				this._MODO = FormNuevoUsuario._MODO_NUEVO;
+			}
+			
+			public function set_modo_editar():void{
+				//Alert.show('cambiado modo editar');
+				this._MODO = FormNuevoUsuario._MODO_EDITAR;
+				this.cargarUsuario();
+				
+			
+			} 
+			
+			
+			
+			public function redibujar():void{
+				switch(this._MODO){
+					case FormNuevoUsuario._MODO_NUEVO:
+						this.btnGuardarCambios.visible = false;
+						this.btnRegistrar.visible = true;
+						var fechaHoy:Date = new Date();
+						this._fechaNac = fechaHoy;
+						this.txtFechaNac.selectedDate = this._fechaNac;
+						this.chkMasculino.selected = true;
+						break;
+					
+					case FormNuevoUsuario._MODO_EDITAR :
+						if(this._idUsuario!=null){
+							this.btnGuardarCambios.visible = true;
+							this.btnRegistrar.visible = false;
+							this.txtEmail.text = this._email;
+							this.txtPassword.text = "******";
+							this._passwordCambiada = false;
+							this.txtNombres.text = this._nombres;
+							this.txtApellidos.text = this._apellidos;
+							
+							if(this._sexo == "1"){
+								this.chkMasculino.selected = true;
+							}else{
+								this.chkFemenino.selected = true;
+							}
+							this.txtTelefono.text = this._telefono;
+							this.txtDomicilio.text = this._domicilio;
+							this.txtFechaNac.selectedDate = this._fechaNac;
+							
+						}else{
+							Alert.show('no se establecio idUsuario');
+						}
+					break;
+					
+				}
+					
+			
+			
+			
+			}
+			
+			private function convertirFecha(unaFecha:Date){
+				var strFechaNac:String = new String();
+					var strDiaFechNac:String=new String();
+				 	var strMesFechNac:String=new String();
+				 	var strAnoFechNac:String=new String();
+				 	strAnoFechNac = unaFecha.getFullYear().toString();
+				 	strMesFechNac = (unaFecha.getMonth()+1).toString();
+				 	strDiaFechNac = unaFecha.getDate().toString();
+				 	strFechaNac = strAnoFechNac +"-"+ strMesFechNac+"-"+strDiaFechNac;
+				 	
+				 	 return strFechaNac;
+			}
+			
+			public function set IdUsuario(valor:String):void{
+				this._idUsuario = valor;
+			}
+			
+			public function get IdUsuario():String{
+				return this._idUsuario;
+			}
+			
+			public function guardarCambios():void{
+				if(this._idUsuario!=null && this._idUsuario != ""){
+					var parametros:Object = new Object();
+					parametros.actualizar = 'usuario';
+					parametros.id = this._idUsuario;
+					parametros.nombres= this._nombres;
+					parametros.apellidos= this._apellidos;
+					parametros.sexo= this._sexo;
+					parametros.domicilio= this._domicilio;
+					parametros.telefono = this._telefono;
+					parametros.email = this._email;
+					
+					if(this._passwordCambiada == true){
+						parametros.password = this._password;
+					}
+					
+					this.httpEditar.send(parametros);
+					
+				}else{
+					Alert.show('no se establecio id usuario');
+				}
+			
+			}
+		]]>
+	</mx:Script>
+	<mx:ViewStack x="10" y="10" id="viewGeneral" width="342" height="452">
+		<mx:Canvas width="100%" height="100%" id="canvasPrincipal">
+		<mx:Form x="0" y="20" width="341" height="422" label="Datos personales" id="frmRegistroUsuario" verticalScrollPolicy="off">
+		<mx:FormItem label="Datos de Acceso" fontWeight="bold" textDecoration="underline">
+		</mx:FormItem>
+		
+		<mx:FormItem label="Email" required="true">
+			<mx:TextInput id="txtEmail"/>
+		</mx:FormItem>
+		<mx:FormItem label="Password" toolTip="min. 6 Caracteres" required="true">
+			<mx:TextInput id="txtPassword" displayAsPassword="true"/>
+		</mx:FormItem>
+		<mx:HRule width="100%"/>
+		<mx:FormItem label="Datos Personales" fontWeight="bold" textDecoration="underline">
+		</mx:FormItem>
+		<mx:FormItem label="Nombres" required="true">
+			<mx:TextInput id="txtNombres"/>
+		</mx:FormItem>
+		<mx:FormItem label="Apellidos" required="true">
+			<mx:TextInput id="txtApellidos"/>
+		</mx:FormItem>
+		<mx:FormItem label="sexo" width="278" horizontalAlign="left" required="false">
+			<mx:RadioButtonGroup id="radSexo" />
+			<mx:RadioButton label="Masculino" selected="false" groupName="radSexo" id="chkMasculino"/>
+			<mx:RadioButton label="Femenino" groupName="radSexo" id="chkFemenino"/>
+		</mx:FormItem>
+		<mx:FormItem label="Telefono">
+			<mx:TextInput id="txtTelefono"/>
+		</mx:FormItem>
+		<mx:FormItem label="Domicilio">
+			<mx:TextInput id="txtDomicilio"/>
+		</mx:FormItem>
+		<mx:FormItem label="Fecha de nac" direction="vertical">
+			<mx:DateField width="164" enabled="true" editable="true" yearNavigationEnabled="true" showToday="true" id="txtFechaNac"  includeInLayout="true"/>
+		</mx:FormItem>
+		
+			<mx:Button label="Registrar Ahora" click="this.registrar()" labelPlacement="right" icon="@Embed(source='../recursos/img/mini_guardar.png')" id="btnRegistrar"/>
+			<mx:Button label="Guardar cambios" icon="@Embed(source='../recursos/img/mini_guardar.png')" id="btnGuardarCambios" click="this.guardarCambios()"/>
+			
+		
+	</mx:Form>
+		<mx:Label x="0" y="0" width="342" color="#EA1308" id="lblMensaje"/>
+		
+	
+		</mx:Canvas>
+		<mx:Canvas label="" width="100%" height="100%" id="canvasCargador">
+			<mx:ProgressBar indeterminate="true" label="Registrando..." x="50" y="165"/>
+		</mx:Canvas>
+	</mx:ViewStack>
+	
+	
+</mx:Canvas>

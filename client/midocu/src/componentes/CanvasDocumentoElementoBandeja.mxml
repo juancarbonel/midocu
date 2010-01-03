@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="456" height="464" xmlns:ns1="componentes.*" creationComplete="this.main()">
+	<mx:ViewStack x="0" y="0" id="viewPrincipal" width="456" height="464">
+		<mx:Canvas label="View 1" width="100%" height="100%" id="canvasPrincipal">
+		</mx:Canvas>
+		<mx:Canvas label="" width="100%" height="100%" id="canvasCargando">
+		</mx:Canvas>
+	</mx:ViewStack>
+	<mx:TabNavigator x="10" y="0" width="437" height="454">
+		<mx:Canvas label="Documento" width="100%" height="100%" icon="@Embed(source='../recursos/img/mini_doc.png')">
+			<ns1:FormEditarDocumento x="10" y="26" id="frmEditarDocumento" width="415" height="385">
+			</ns1:FormEditarDocumento>
+			<mx:ApplicationControlBar y="0" height="28" width="435" textAlign="right" dock="true" x="0">
+				<mx:Button label="Registrar Recepcion" id="btnRegistrarRecepcion" click="this.btnRegistrarRecepcion_CLICK()"/>
+			</mx:ApplicationControlBar>
+		</mx:Canvas>
+		<mx:Canvas label="Anexos" width="100%" height="100%" show="{this.alMostrarPestanaAnexos()}" icon="@Embed(source='../recursos/img/mini_anexos.png')">
+			<ns1:DatagridAnexosDocumento x="10" y="10" width="415" height="258" id="dgAnexosDocumento"/>
+			<mx:Label x="10" y="271" text="Registrar nuevo anexo"/>
+			<ns1:FormNuevoAnexoDocumento x="10" y="287" id="frmRegistrarAnexo">
+			</ns1:FormNuevoAnexoDocumento>
+		</mx:Canvas>
+		<mx:Canvas label="Derivar" width="100%" height="100%" >
+			<mx:icon>@Embed(source='../recursos/img/mini_derivar_doc.png')</mx:icon>
+			<mx:Panel x="10" y="10" width="416" height="321" layout="absolute" title="Seleccione Area">
+				<ns1:DatagridAreas x="10" y="10" width="376" height="249" id="dgAreas"/>
+			</mx:Panel>
+			<mx:ApplicationControlBar width="416" height="46" dock="false" x="10" y="339">
+			<mx:Button label="Derivar Ahora" id="btnDerivarDocumento" click="{this.btn_derivar_CLICK()}">
+				<mx:icon>@Embed(source='../recursos/img/mini_derivar_doc.png')</mx:icon>
+			</mx:Button>
+			</mx:ApplicationControlBar>
+		</mx:Canvas>
+	</mx:TabNavigator>
+	
+	
+	<mx:Script >
+		<![CDATA[
+			import mx.controls.DataGrid;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			import mx.controls.Alert;
+		
+			private var _idDocumento:String;
+			private var _httpDerivacion:HTTPService;
+			private var _httpRecepcion:HTTPService;
+			
+			private function main():void{
+				this.init();				
+			}
+			
+			private function alObtenerRespuestaHttpDerivacion(e:ResultEvent):void{
+				Alert.show(e.result.toString());
+			}
+			
+			private function alFallarRespuestaHttpDerivacion(e:FaultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				Alert.show("imposible realizar envio, intentelo nuevamente");
+			}
+			
+			private function init():void{
+				
+				
+				/********************************
+				 * estableciendo _httpDerivacion
+				 *******************************/
+				this._httpDerivacion=new HTTPService();
+				this._httpDerivacion.url= ConfigGlobal.getUrlGlobal();
+				this._httpDerivacion.method="POST";
+				this._httpDerivacion.resultFormat = HTTPService.RESULT_FORMAT_TEXT;
+				this._httpDerivacion.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttpDerivacion);
+				this._httpDerivacion.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttpDerivacion);
+				
+				/********************************
+				 * estableciendo _httpRecepcion
+				 *******************************/
+				 this._httpRecepcion=new HTTPService();
+				 this._httpRecepcion.url = ConfigGlobal.getUrlGlobal();
+				 this._httpRecepcion.method = "POST";
+				 this._httpRecepcion.resultFormat = HTTPService.RESULT_FORMAT_TEXT;
+				 this._httpRecepcion.addEventListener(ResultEvent.RESULT ,this.alObtenerRespuestaHttpRecepcion);
+				 this._httpRecepcion.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttpRecepcion);
+				 
+				this.frmEditarDocumento.IdDocumento=this._idDocumento;
+				this.frmEditarDocumento.cargar();
+				
+				
+				
+			}
+			
+			public function cargar():void{
+				this.frmEditarDocumento.cargar();
+			}
+			
+			
+			public function get IdDocumento():String{
+				return this._idDocumento;
+			}
+			
+			public function set IdDocumento(Id:String):void{
+				this._idDocumento=Id;
+			}
+			
+			public function btn_derivar_CLICK():void{
+				if(this.dgAreas.selectedItems.length==1){
+				this.derivarDocumento();
+				}else{
+				Alert.show("Seleccione Area a derivar");
+				}
+			}
+			
+			public function derivarDocumento():void{
+
+				var parametros:Object=new Object();
+				parametros.registrar="derivacionDocumento";
+				parametros.idDocumento=this._idDocumento;
+				
+				if(this.dgAreas.IdAreaSeleccionada){
+					parametros.idAreaRecepcion=this.dgAreas.IdAreaSeleccionada;
+				}
+				 
+				this._httpDerivacion.send(parametros);
+				
+			}
+			
+			public function registrarRecepcionDocumento(){
+				if(this._idDocumento!=null){
+	
+					var parametros:Object = new Object();
+					parametros.registrar = 'recepcionDocumento';
+					parametros.idDocumentoRecibido= this._idDocumento;
+					this._httpRecepcion.send(parametros);		
+				}
+
+			}
+			private function btnRegistrarRecepcion_CLICK():void{
+				this.registrarRecepcionDocumento();
+			}
+			
+			
+			private function alObtenerRespuestaHttpRecepcion(e:ResultEvent):void{
+				Alert.show(e.result.toString());
+			}
+			
+			private function alFallarRespuestaHttpRecepcion(e:ResultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				Alert.show("Error al  registrar la recepcion de documento");
+			}
+			
+			private function alMostrarPestanaAnexos():void{
+				
+				this.dgAnexosDocumento.IdDocumento = this._idDocumento;
+				this.dgAnexosDocumento.cargar();
+				this.frmRegistrarAnexo.setIdDocumento(this._idDocumento);
+			}
+			
+			
+			
+
+			
+			
+		]]>
+	</mx:Script>
+</mx:Canvas>

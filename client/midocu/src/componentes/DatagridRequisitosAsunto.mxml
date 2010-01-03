@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="this.main()">
+	<mx:columns>
+		<mx:DataGridColumn headerText="requisito" dataField="Nombre">
+		
+		</mx:DataGridColumn>
+		<mx:DataGridColumn headerText="descripcion" dataField="Descripcion">
+		
+		</mx:DataGridColumn>
+	</mx:columns>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.http.HTTPService;
+			private var _http:HTTPService;
+			private var _idAsunto:String;
+			private function main():void{
+				this.init();
+			}
+			
+			private function init():void{
+				this._http = new HTTPService();
+				this._http.url = ConfigGlobal.getUrlGlobal();
+				this._http.resultFormat =  HTTPService.RESULT_FORMAT_E4X;
+				this._http.method = "POST";
+				this._http.addEventListener(ResultEvent.RESULT, this.http_RESULT);
+				this._http.addEventListener(FaultEvent.FAULT, this.http_FAULT);
+			}
+			
+			private function http_RESULT (e:ResultEvent):void{
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				
+				this.dataProvider = e.result.Requisito;
+			}
+			
+			private function http_FAULT(e:FaultEvent):void{
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				
+				Alert.show('Error al cargar requisitos ');
+			}
+			
+			public function get IdAsunto():String{
+				return this._idAsunto;
+			}
+			public function set IdAsunto(valor:String):void{
+				this._idAsunto = valor;
+			}
+			public function cargar():void{
+				if(this._idAsunto!=null){
+					var parametros:Object = new Object();
+					parametros.mostradorXml = 'requisitosAsunto';
+					parametros.idAsunto = this._idAsunto;
+					this._http.send(parametros);
+				}else{
+				 Alert.show('error al cargar: no se establecio idAsunto');
+				}
+			
+			}
+		]]>
+	</mx:Script>
+</mx:DataGrid>

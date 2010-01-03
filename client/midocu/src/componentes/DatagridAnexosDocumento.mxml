@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" showHeaders="true" creationComplete="this.main()">
+	<mx:columns>
+		<mx:DataGridColumn headerText="Anexo" dataField="Nombre">
+		
+		</mx:DataGridColumn>
+		<mx:DataGridColumn headerText="descripcion" dataField="Descripcion">
+		
+		</mx:DataGridColumn>
+	</mx:columns>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+		
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.http.HTTPService;
+			import configuracion.ConfigGlobal;
+			
+			private var _http:HTTPService;
+			private var _idDocumento;
+			
+			private function main():void{
+				this.init();
+			}
+			
+			private function init(){
+			/**
+			 * estableciendo _http
+			 **/ 
+			 this._http=new HTTPService();
+			 this._http.method = "POST";
+			 this._http.resultFormat = HTTPService.RESULT_FORMAT_E4X;
+			 this._http.url = ConfigGlobal.getUrlGlobal();
+			 this._http.addEventListener(ResultEvent.RESULT, this.alObtenerRespuestaHttp);
+			 this._http.addEventListener(FaultEvent.FAULT, this.alFallarRespuestaHttp);
+			}
+			
+			private function alObtenerRespuestaHttp(e:ResultEvent):void{
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				this.dataProvider = e.result.Anexo;	
+			}
+			
+			private function alFallarRespuestaHttp(e:FaultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				
+				Alert.show('Error: Fallo al cargar Anexos de documento');
+			}
+			
+			public function cargar():void
+			{
+				if(this._idDocumento!=null){
+					var parametros:Object = new Object();
+					parametros.mostradorXml = 'anexosDocumento';
+					parametros.idDocumento = this._idDocumento;
+					this._http.send(parametros);
+				
+				}else{
+					Alert.show('Error, no se establecio idDocumento');
+				}
+			}
+			
+			public function set IdDocumento(valor:String):void{
+				this._idDocumento = valor;
+			}
+		]]>
+	</mx:Script>
+	
+	
+	
+</mx:DataGrid>

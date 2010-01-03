@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+	
+	 layout="vertical" xmlns:componentes="componentes.*" backgroundGradientAlphas="[1.0, 1.0]" backgroundGradientColors="[#0F3552, #1298D0]">
+	<mx:Script>
+		<![CDATA[
+			import configuracion.ConfigGlobal;
+		 	
+		]]>
+	</mx:Script>
+	
+	<mx:Panel width="700" height="116" layout="absolute" creationCompleteEffect="WipeRight">
+		<componentes:LogoCabecera x="33" y="1">
+		</componentes:LogoCabecera>
+	</mx:Panel>
+	<mx:Panel width="700" height="309" layout="absolute" horizontalAlign="center" creationCompleteEffect="WipeLeft">
+		<mx:Panel width="305" height="198"  title="Identificacion de usuario" layout="vertical" x="187.5" y="10">
+			<componentes:LoginUsuario Url_ir="{ConfigGlobal.getUrlGlobal() +'?modulo=panelUsuario'}"  creationCompleteEffect="Zoom">
+			</componentes:LoginUsuario>
+		</mx:Panel>
+	</mx:Panel>
+	
+</mx:Application>

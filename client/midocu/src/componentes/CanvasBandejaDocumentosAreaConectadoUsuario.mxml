@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="602" height="420" xmlns:ns1="componentes.*" creationComplete="this.main()">
+	<ns1:CanvasBandejaDocumentosArea x="2" y="5" id="bandejaDocumento" height="410" width="597">
+	</ns1:CanvasBandejaDocumentosArea>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.validators.EmailValidator;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.http.HTTPService;
+			
+			/************************************
+			 * 
+			 *			Atributos
+			 * 
+			 ************************************/
+			private var _httpSessionUsuario:HTTPService;
+			
+			private var _idAreaConectado:String;
+			
+			private function main():void{
+				this.init();
+			}
+			
+			private function init():void{
+				
+			/**************************************
+			  *	preparando _httpSessionUsuario
+			  **************************************/
+			 this._httpSessionUsuario= new HTTPService();
+			 this._httpSessionUsuario.method="POST";
+			 this._httpSessionUsuario.resultFormat = HTTPService.RESULT_FORMAT_E4X;
+			 this._httpSessionUsuario.url =  ConfigGlobal.getUrlGlobal();
+			 this._httpSessionUsuario.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttpSessionUsuario);
+			 this._httpSessionUsuario.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttpSessionUsuario);
+			 
+			
+			}
+			
+			public function cargarConfig(){
+				var parametros:Object=new Object();
+				parametros.mostradorXml="sessionUsuario";
+				this._httpSessionUsuario.send(parametros);
+			}
+			
+			
+			
+			private function alObtenerRespuestaHttpSessionUsuario(e:ResultEvent):void{
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				var sessionXml:XML=new XML(e.result.toString());
+				this._idAreaConectado=sessionXml.child('IdAreaConectado').text();
+				
+				
+				this.bandejaDocumento.IdArea = this._idAreaConectado;
+				this.bandejaDocumento.cargarBandejaEntrada();
+				
+			}
+			
+			private function alFallarRespuestaHttpSessionUsuario(e:FaultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.toString());
+				}
+				Alert.show("Fallo al cargar configuracion de usuario, intentelo nuevamente");
+			}
+			
+			
+			
+			
+			
+			
+		]]>
+	</mx:Script>
+</mx:Canvas>

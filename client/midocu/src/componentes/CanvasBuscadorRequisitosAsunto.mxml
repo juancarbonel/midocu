@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="338" height="250" xmlns:ns1="componentes.*" creationComplete="this.main()" creationCompleteEffect="Fade" hideEffect="WipeUp">
+	<ns1:DatagridAsuntos x="10" y="51" width="318" height="151" id="dgAsuntos"/>
+	<mx:Button x="10" y="21" label="Buscar Asunto" id="btnEncontrar" click="this.btnEncontrar_CLICK()" icon="@Embed(source='../recursos/img/mini_lupa.png')"/>
+	<mx:TextInput x="143" y="21" width="185" id="txtCriterio"/>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			
+			import mx.effects.Fade;
+			import mx.effects.Effect;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.http.HTTPService;
+			
+			private var _http:HTTPService;
+			
+			private function main():void{
+				this.init();
+			
+			}
+			
+			private function init():void{
+			
+				
+				this._http=new HTTPService();
+				this._http.method = "POST";
+				this._http.url = ConfigGlobal.getUrlGlobal();
+				//this._http.resultFormat = HTTPService.RESULT_FORMAT_TEXT;
+				this._http.resultFormat = HTTPService.RESULT_FORMAT_E4X;
+				this._http.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttp);
+				this._http.addEventListener(FaultEvent.FAULT,this.alFallarRepuestaHttp);
+				
+				this.txtCriterio.addEventListener(KeyboardEvent.KEY_DOWN,this.txtCriterio_KEYBOARD_DOWN);
+				this.dgAsuntos.addEventListener(ListEvent.CHANGE, this.dgAsuntos_CHANGE);
+				this.cargar();
+			}
+			
+			private function dgAsuntos_CHANGE(e:ListEvent){
+				this.btnAbrirRequisitos.enabled = true;
+			} 
+			
+			private function txtCriterio_KEYBOARD_DOWN(e:KeyboardEvent){
+				if(e.charCode==13){
+					this.btnEncontrar_CLICK();
+				}
+			}
+			
+			private function alObtenerRespuestaHttp(e:ResultEvent):void{
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				this.dgAsuntos.dataProvider=e.result.Asunto;
+				
+			}
+			
+			private function alFallarRepuestaHttp(e:FaultEvent):void{
+				Alert.show(e.fault.toString());	
+			}
+			
+			private function btnEncontrar_CLICK():void{
+				
+				this.encontrarAsunto();
+			}
+			
+			private function encontrarAsunto():void{
+				var parametros:Object=new Object();
+				parametros.mostradorXml='asuntosEncontradosBuscador';
+				parametros.nombre=this.txtCriterio.text;
+				this._http.send(parametros);
+				
+			}
+			
+			private function abrirRequisitos():void{
+				var idAsuntoSel:String = this.dgAsuntos.getIdAsuntoSeleccionado();
+				var unaVentana:Ventana = new Ventana();
+				var canvasRequisitosAsunto:CanvasRequisitosAsunto = new CanvasRequisitosAsunto();
+				canvasRequisitosAsunto.IdAsunto = idAsuntoSel;
+				unaVentana.padre = this.parent;
+				unaVentana.x = this.parent.x;
+				unaVentana.y = this.parent.y;
+				unaVentana.addChild(canvasRequisitosAsunto);
+				unaVentana.mostrar();
+				
+			}
+			
+			public function cargar():void{
+				this.dgAsuntos.cargar();
+			}
+			
+			
+			
+		]]>
+	</mx:Script>
+	<mx:Button x="10" y="210" label="mostrar Requisitos" id="btnAbrirRequisitos" click="this.abrirRequisitos()" enabled="false"/>
+	<mx:Button x="289" y="200" width="39" click="this.cargar()">
+		<mx:icon>@Embed(source='../recursos/img/mini_refrescar.gif')</mx:icon>
+	</mx:Button>
+</mx:Canvas>

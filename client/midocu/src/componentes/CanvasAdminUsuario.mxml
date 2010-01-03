@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="792" height="560" xmlns:ns1="componentes.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.http.HTTPService;
+			import mx.controls.Alert;
+			import mx.events.ListEvent;
+			
+			
+			private var _httpAsignarAreaUsuario:HTTPService;
+			private function canvasListado_CREATION_COMPLETE():void{
+				this.dgUsuarios.addEventListener(ListEvent.CHANGE,this.dgUsuarios_CHANGE);
+			}
+			
+			private function canvasAsignarArea_CREATION_COMPLETE():void{
+				this._httpAsignarAreaUsuario = new HTTPService();
+				this._httpAsignarAreaUsuario.method = "POST";
+				this._httpAsignarAreaUsuario.url = ConfigGlobal.getUrlGlobal();
+				this._httpAsignarAreaUsuario.resultFormat = HTTPService.RESULT_FORMAT_TEXT;
+				this._httpAsignarAreaUsuario.addEventListener(ResultEvent.RESULT,this._httpAsignarAreaUsuario_RESULT);
+				this._httpAsignarAreaUsuario.addEventListener(FaultEvent.FAULT,this._httpAsignarAreaUsuario_FAULT);
+				
+				this.dgUsuariosAreas.addEventListener(ListEvent.CHANGE,this.dgUsuarioAsignar_CHANGE);
+			}
+			
+			private function _httpAsignarAreaUsuario_RESULT(e:ResultEvent):void{
+				Alert.show(e.result.toString());
+				this.mostrarAreasPerteneceUsuarioSeleccionado();
+				
+			}	
+			
+			private function _httpAsignarAreaUsuario_FAULT(e:FaultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.toString());
+				}
+				
+				Alert.show('error al asignar area a usuario');
+			}
+			
+			private function btnAsignarAreaUsuario_CLICK():void{
+				this.asignarAreaUsuario(this.dgAreasParaAsignar.IdAreaSeleccionada,this.dgUsuariosAreas.IdUsuarioSeleccionado);
+			}
+			
+			private function dgAreasParaAsignar_CHANGE():void{
+				this.btnAsignarAreaUsuario.enabled = true;
+			}
+			
+			private function dgAreasPerteneceUsuario_CHANGE():void{
+				this.btnDesasociarAreaUsuario.enabled = true;
+			}
+			
+			private function asignarAreaUsuario(idArea:String,idUsuario:String):void{
+				var parametros:Object = new Object();
+				parametros.registrar = 'asociarAreaUsuario';
+				parametros.idArea = idArea;
+				parametros.idUsuario = idUsuario;
+				this._httpAsignarAreaUsuario.send(parametros);
+			}
+			
+			
+			private function desasociarAreaUsuario(idArea:String,idUsuario:String):void{
+				var parametros:Object = new Object();
+				parametros.registrar = 'desasociarAreaUsuario';
+				parametros.idArea = idArea;
+				parametros.idUsuario = idUsuario;
+				this._httpAsignarAreaUsuario.send(parametros);
+			}
+			
+			private function desasociarAreaUsuario_CLICK():void{
+				this.desasociarAreaUsuario(this.dgAreasPerteneceUsuario.IdAreaSeleccionada,this.dgUsuariosAreas.IdUsuarioSeleccionado);
+			}
+			
+			private function dgUsuarioAsignar_CHANGE(e:ListEvent):void{
+					this.canvasAreasAsignarUsuario.enabled = true;
+					this.canvasAreasAsignarUsuario.visible=false;
+					this.canvasAreasAsignarUsuario.visible = true;
+					this.mostrarAreasPerteneceUsuarioSeleccionado();
+			}
+			
+			private function mostrarAreasPerteneceUsuarioSeleccionado():void{
+				
+				this.dgAreasPerteneceUsuario.IdUsuario = this.dgUsuariosAreas.IdUsuarioSeleccionado;
+				this.dgAreasPerteneceUsuario.cargar();
+			}
+			private function dgUsuarios_CHANGE(e:ListEvent):void{
+				this.frmUsuario.enabled = true;
+				this.frmUsuario.IdUsuario = this.dgUsuarios.IdUsuarioSeleccionado;
+				this.frmUsuario.set_modo_editar();
+			}
+		]]>
+	</mx:Script>
+	<mx:TabNavigator x="10" y="10" width="760" height="541">
+		<mx:Canvas label="Listado" width="100%" height="100%" id="canvasListado" creationComplete="this.canvasListado_CREATION_COMPLETE()" show="this.dgUsuarios.cargar();">
+			<ns1:DatagridUsuarios x="10" y="10" width="313" height="433" id="dgUsuarios" creationComplete="this.dgUsuarios.cargar()"/>
+			<ns1:FormNuevoUsuario x="331" y="10" id="frmUsuario" enabled="false">
+			</ns1:FormNuevoUsuario>
+		</mx:Canvas>
+		
+		<mx:Canvas label="Nuevo" width="100%" height="100%">
+			<ns1:FormNuevoUsuario x="10" y="10">
+			</ns1:FormNuevoUsuario>
+		</mx:Canvas>
+		
+		<mx:Canvas label="Asignar a Area" width="100%" height="100%" id="canvasAsignarArea" creationComplete="this.canvasAsignarArea_CREATION_COMPLETE()">
+			<mx:Panel x="2" y="10" width="325" height="384" layout="absolute" title="Usuarios">
+				<ns1:DatagridUsuarios x="10" y="10" height="298" id="dgUsuariosAreas" creationComplete="this.dgUsuariosAreas.cargar();" width="285"/>
+			</mx:Panel>
+			<mx:Panel x="335" y="10" width="413" height="384" layout="absolute" id="canvasAreasAsignarUsuario" showEffect="WipeRight" enabled="false" horizontalScrollPolicy="off">
+				<ns1:DatagridAreasPerteneceUsuario x="3" y="25" id="dgAreasPerteneceUsuario" width="164" height="227" change="this.dgAreasPerteneceUsuario_CHANGE()"/>
+				<mx:Button x="2" y="250" label="Remover" id="btnDesasociarAreaUsuario" click="this.desasociarAreaUsuario_CLICK()" width="78" enabled="false"/>
+				<ns1:DatagridAreas x="206" y="25" width="177" id="dgAreasParaAsignar" change="this.dgAreasParaAsignar_CHANGE()"/>
+				<mx:Label x="409" y="-39" text="Label"/>
+				<mx:Label x="0" y="10" text="Areas Asignadas a usuario"/>
+				<mx:Button x="168" y="105" width="35" icon="@Embed(source='../recursos/img/pag_prev.gif')" id="btnAsignarAreaUsuario" click="this.btnAsignarAreaUsuario_CLICK()" enabled="false"/>
+			</mx:Panel>
+		</mx:Canvas>
+		
+	</mx:TabNavigator>
+	
+</mx:Canvas>

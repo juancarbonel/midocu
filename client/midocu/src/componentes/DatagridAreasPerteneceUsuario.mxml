@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="this.main()" width="208" height="228">
+	<mx:columns>
+		<mx:DataGridColumn headerText="Nombre" dataField="Nombre" width="100">
+			
+		</mx:DataGridColumn>
+	</mx:columns>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			import configuracion.ConfigGlobal;
+		
+			private var _http:HTTPService;
+			private var _idUsuario:String;
+			
+			private function main():void{
+				this.init();	
+
+			}
+			
+			private function init():void{
+				this._http=new HTTPService();
+				//this._http.resultFormat= HTTPService.RESULT_FORMAT_TEXT;
+				this._http.resultFormat= HTTPService.RESULT_FORMAT_E4X;
+				this._http.url= ConfigGlobal.getUrlGlobal();
+				this._http.method="POST";
+				this._http.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttp);
+				this._http.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttp);
+			}
+			
+			public function cargar(){
+				if(this._idUsuario!=null){
+					var parametros:Object=new Object();
+					parametros.mostradorXml="areasPerteneceUsuario";
+					parametros.idUsuario = this._idUsuario;
+					this._http.send(parametros);
+				}else{
+					Alert.show('id usuario no establecido,no se puede cargar areas que pertenece');
+				}
+			}
+			
+			private function alObtenerRespuestaHttp(e:ResultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				this.dataProvider=e.result.Area;
+			}
+			
+			private function alFallarRespuestaHttp(e:FaultEvent):void{
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				
+				Alert.show("Error al cargar areas");
+			}
+			
+			public function get IdUsuario():String{
+				return this._idUsuario;
+			}
+			
+			public function set IdUsuario(valor:String):void{
+				this._idUsuario = valor;
+			}
+			
+			public function get IdAreaSeleccionada():String{
+				return this.selectedItem.Id;
+			}
+		]]>
+	</mx:Script>	
+	
+</mx:DataGrid>

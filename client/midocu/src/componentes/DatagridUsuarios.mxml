@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:DataGrid xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="this.main()">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.http.HTTPService;
+			
+			private var _idUsuarioSeleccionado:String;
+			private var _httpCargaUsuarios:HTTPService;
+			private function main():void{
+				this.init();
+			}
+			
+			private function init():void{
+				this._httpCargaUsuarios=new HTTPService();
+				this._httpCargaUsuarios.url = ConfigGlobal.getUrlGlobal();
+				this._httpCargaUsuarios.method = "POST";
+				this._httpCargaUsuarios.resultFormat = HTTPService.RESULT_FORMAT_TEXT;
+				this._httpCargaUsuarios.addEventListener(ResultEvent.RESULT,this._httpCargaUsuarios_RESULT);
+				this._httpCargaUsuarios.addEventListener(FaultEvent.FAULT, this._httpCargaUsuarios_FAULT);
+				
+			}
+			
+			
+			
+			public function cargar():void{
+				var parametros:Object = new Object();
+				parametros.mostradorXml = 'usuarios';
+				this._httpCargaUsuarios.send(parametros);
+			}
+			private function _httpCargaUsuarios_RESULT(e:ResultEvent):void{
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				
+				var Xml:XMLList = new XMLList(e.result.toString());
+				this.dataProvider = Xml.Usuario;
+			}
+			
+			public function _httpCargaUsuarios_FAULT(e:FaultEvent):void{
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				
+				
+				Alert.show('Fallo al cargar Usuarios');
+			}
+			
+			public function get IdUsuarioSeleccionado():String{
+				return this.selectedItem.Id;
+			}
+			
+			
+			
+		
+			
+			
+		]]>
+	</mx:Script>
+	<mx:columns>
+		<mx:DataGridColumn headerText="Nombres" dataField="Nombres">
+			
+		</mx:DataGridColumn>
+		
+		<mx:DataGridColumn headerText="Apellidos" dataField="Apellidos">
+			
+		</mx:DataGridColumn>
+		
+		<mx:DataGridColumn headerText="Email" dataField="Email">
+			
+		</mx:DataGridColumn>
+	</mx:columns>
+	
+</mx:DataGrid>

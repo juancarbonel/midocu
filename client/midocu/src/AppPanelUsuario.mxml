@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" xmlns:ns1="componentes.*"  creationComplete="this.main()" backgroundGradientAlphas="[1.0, 1.0]" backgroundGradientColors="[#0F3552, #1298D0]" >
+
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.http.HTTPService;
+			import mx.events.FlexEvent;
+			private var _idUsuario:String;
+			private var _httpCargarSessionUsuario:HTTPService;
+			
+			private function main():void{
+				this.init();
+			}
+			
+			private function init():void{
+				
+				this._httpCargarSessionUsuario = new HTTPService();
+				this._httpCargarSessionUsuario.url = ConfigGlobal.getUrlGlobal();
+				this._httpCargarSessionUsuario.method = "POST";
+				this._httpCargarSessionUsuario.resultFormat = HTTPService.RESULT_FORMAT_TEXT;
+				this._httpCargarSessionUsuario.addEventListener(ResultEvent.RESULT, this._httpCargarSessionUsuario_RESULT);
+				this._httpCargarSessionUsuario.addEventListener(FaultEvent.FAULT, this._httpCargarSessionUsuario_FAULT);
+				this.cargarSessionUsuario();
+			
+				
+			}
+			
+			private function cargarSessionUsuario():void{
+				var parametros:Object = new Object();
+				parametros.mostradorXml = 'sessionUsuario';
+				this._httpCargarSessionUsuario.send(parametros);
+			}
+			
+			private function _httpCargarSessionUsuario_RESULT(e:ResultEvent):void{
+				//Alert.show(e.result.toString());
+				var xmlSession:XML = new XML(e.result.toString());
+				if(xmlSession.child('IdUsuario').toString()!=""){
+					this._idUsuario = xmlSession.child('IdUsuario').toString();
+				}
+			}
+			
+			private function _httpCargarSessionUsuario_FAULT(e:FaultEvent):void{
+				Alert.show('error al cargar session de usuario');
+			}
+			private function frmEditarUsuario_SHOW(){
+				if(this._idUsuario!=null){
+					this.frmEditarUsuario.IdUsuario = this._idUsuario; 
+					this.frmEditarUsuario.set_modo_editar();
+				}else{
+					Alert.show('no se establecio idUsuario');
+				}
+			}
+			
+			
+			
+			
+		]]>
+	</mx:Script>
+	<mx:Canvas width="910">
+		<mx:Panel x="0" y="0" width="910" height="118" layout="absolute"  creationCompleteEffect="WipeLeft">
+			<ns1:LogoCabecera x="0" y="0">
+			</ns1:LogoCabecera>
+			<ns1:CanvasCerrarSession x="774" y="0">
+			</ns1:CanvasCerrarSession>
+		</mx:Panel>
+		
+		<mx:ApplicationControlBar width="100%" height="47" creationCompleteEffect="Zoom" x="0" y="125">
+			<mx:ToggleButtonBar x="2" y="133" width="245" height="36" dataProvider="viewGeneral" creationCompleteEffect="Zoom">
+			</mx:ToggleButtonBar>	
+		</mx:ApplicationControlBar>
+		
+			<mx:ViewStack x="0" y="177" width="100%" height="511" id="viewGeneral" >
+				
+				<mx:Canvas label="Panel" width="100%" height="100%"  showEffect="WipeDown" hideEffect="WipeUp">
+					<mx:Panel width="100%" height="480" layout="absolute">
+						<mx:Panel width="202" height="140" layout="absolute" title="Areas asociadas " x="10" y="10" showEffect="WipeDown">
+							<ns1:CanvasAreaConectar x="0" y="10">
+							</ns1:CanvasAreaConectar>
+						</mx:Panel>
+					<mx:Panel width="630" height="403" layout="absolute" x="221" y="10" creationCompleteEffect="Zoom">
+						<mx:SWFLoader x="10" y="10" width="590" height="322" source="recursos/swf/logo_principal.swf"/>
+					</mx:Panel>
+					</mx:Panel>
+				</mx:Canvas>
+				<mx:Canvas label="Datos Usuario" width="100%" height="100%" id="viewDatosUsuario"  showEffect="WipeDown" hideEffect="WipeUp">
+					<mx:Panel width="100%" layout="absolute">
+						<ns1:FormNuevoUsuario x="10" y="10" height="437" id="frmEditarUsuario" creationComplete="this.frmEditarUsuario_SHOW()">
+						</ns1:FormNuevoUsuario>
+					</mx:Panel>
+				</mx:Canvas>
+				<mx:Canvas label="Chat" width="100%" height="100%">
+					<mx:Panel x="0" y="0" width="910" height="422" layout="absolute">
+						<ns1:CanvasChat x="55" y="0" width="552" height="372">
+						</ns1:CanvasChat>
+					</mx:Panel>
+				</mx:Canvas>
+			</mx:ViewStack>
+		
+	</mx:Canvas>
+</mx:Application>

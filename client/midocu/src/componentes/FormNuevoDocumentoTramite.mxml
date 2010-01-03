@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="368" height="398" xmlns:componentes="componentes.*"  creationComplete="this.main()">
+
+	<mx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			//************ IMPORTS ********
+			import mx.events.ListEvent;
+			import mx.controls.Alert;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.ProgressBar;
+			import mx.rpc.http.HTTPService;
+			//-----------------------------
+			
+			//***********ATRIBUTOS *********
+			private var http:HTTPService;
+			//1****parametros de envio***** 
+			private var _idAsuntoSeleccionado:String=null;
+			private var _idRemitenteSeleccionado:String=null;
+			//1----------------------------
+			
+			//------------------------------
+			
+			
+			
+			
+			
+			
+			private function main():void{
+				this.init();
+			}
+			
+			private function init():void{
+				
+				this.http=new HTTPService();
+				this.http.resultFormat= HTTPService.RESULT_FORMAT_TEXT;
+				this.http.url= ConfigGlobal.getUrlGlobal();
+				this.http.method="POST";
+				this.http.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttp);
+				this.http.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHtpp);
+			}
+			
+			
+		
+			
+			private function alObtenerRespuestaHttp(e:ResultEvent):void{
+				
+				this.set_modo_registrando(false);
+				this.inicializar_controles();
+				Alert.show(e.result.toString());
+				
+			}
+			
+			private function alFallarRespuestaHtpp(e:FaultEvent):void{
+				
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				
+				Alert.show('Fallo al guardar documento');
+				this.set_modo_registrando(false);
+			}
+			
+			private function registrar(){
+				this.set_modo_registrando(true);
+				
+				var parametros:Object=new Object();
+				
+				//armando parametros
+				parametros.registrar="documento";
+				parametros.nroDocumento = this.txtNroDocumento.text;
+				parametros.nroFolios = this.numNroFolios.value;
+				parametros.comentario = this.txtComentario.text;
+				parametros.sumilla = this.txtSumilla.text;
+				parametros.idAsunto = this._idAsuntoSeleccionado;
+				parametros.idEstadoDocumento = this.cboEstadoDocumento.getIdEstadoSeleccionado();
+				parametros.idTipoDocumento= this.cboTiposDocumento.getIdTipoSeleccionado();
+				parametros.idRemitente = this._idRemitenteSeleccionado;
+				//fin de armado de parametros
+				
+				//enviando parametros
+			 	this.http.send(parametros);
+			 
+			}
+			
+			
+			
+			private function set_modo_registrando(valor:Boolean){
+				if(valor==true){
+					this.viewGeneral.selectedChild = this.canvasCargando;
+				}else{
+					this.viewGeneral.selectedChild = this.canvasPrincipal;
+				}
+			}
+			
+			private function inicializar_controles(){
+					this.txtNroDocumento.text="";
+					this.txtSumilla.text="";
+					this.txtComentario.text="";
+					this.numNroFolios.value=1;
+					this.txtRemitente.text="";
+					this._idRemitenteSeleccionado=null;
+					this.txtAsunto.text="";
+					this._idAsuntoSeleccionado=null;
+					
+					
+				
+			}
+			
+			private function abrirBuscadorRemitente():void{
+				 var unaVentana:Ventana=new Ventana();
+				 var buscadorRemitente:CanvasBuscadorRemitente =new CanvasBuscadorRemitente()
+				
+				 
+				 unaVentana.padre=this.parent;
+				 unaVentana.title="Buscador de Remitentes";
+				 unaVentana.addChild(buscadorRemitente);
+				 buscadorRemitente.dgRemitentes.addEventListener(ListEvent.CHANGE,this.alEscogerRemitente);	
+				 unaVentana.mostrar();
+				 unaVentana.x = this.parentApplication.mouseX;
+				 unaVentana.y = this.parentApplication.mouseY - (buscadorRemitente.height/2);
+				 
+				 
+				
+			}
+			
+			private function abrirBuscadorAsunto():void{
+				 var unaVentana:Ventana=new Ventana();
+				 var buscadorRequisitosAsunto:CanvasBuscadorRequisitosAsunto=new CanvasBuscadorRequisitosAsunto();
+				
+				 
+				 unaVentana.padre=this.parent;
+				 unaVentana.title = "Buscador de Asuntos";
+				 unaVentana.addChild(buscadorRequisitosAsunto);
+				 buscadorRequisitosAsunto.dgAsuntos.addEventListener(ListEvent.CHANGE,this.alEscogerAsunto);
+				 unaVentana.mostrar();
+				 unaVentana.x = this.parentApplication.mouseX;
+				 unaVentana.y = this.parentApplication.mouseY-(buscadorRequisitosAsunto.height/2);
+				 
+				 
+			}
+			
+			private function alEscogerRemitente(e:ListEvent):void{
+				this._idRemitenteSeleccionado=e.target.getIdRemitenteSeleccionado();
+				this.txtRemitente.text=e.target.getNombreRemitenteSeleccionado();
+			}
+			
+			private function alEscogerAsunto(e:ListEvent):void{
+				this.txtAsunto.text= e.target.getNombreAsuntoSeleccionado();
+				this._idAsuntoSeleccionado = e.target.getIdAsuntoSeleccionado();
+			
+			}
+			
+			private function btnRegistrar_CLICK():void{
+				if(this.verificar_datos_entrada()==true){
+					this.registrar();
+				}else{
+				
+				}
+				
+			}
+			private function verificar_datos_entrada():Boolean{
+				var	listo_para_registrar:Boolean=true;
+				
+				this.txtRemitente.errorString="";
+				this.txtAsunto.errorString="";
+				this.txtNroDocumento.errorString="";
+				this.txtSumilla.errorString="";
+				this.txtComentario.errorString="";
+				this.txtNroDocumento.errorString="";
+				this.numNroFolios.errorString="";
+				
+				
+				if(this._idRemitenteSeleccionado==null){
+					this.txtRemitente.errorString="Ingrese el remitente de documento";
+						listo_para_registrar=false;
+				}
+				
+				if(this._idAsuntoSeleccionado==null){
+					this.txtAsunto.errorString = "Ingrese el Asunto de documento";
+						listo_para_registrar=false;
+				}
+				
+				return listo_para_registrar;		
+			}
+			
+			public function cargar(){
+				this.cboEstadoDocumento.cargar();
+				this.cboTiposDocumento.cargar();
+			}
+			
+			
+		]]>
+	</mx:Script>
+	<mx:ViewStack x="0" y="0" id="viewGeneral" width="368" height="398">
+		<mx:Canvas width="100%" height="100%" id="canvasPrincipal">
+			<mx:Label x="31" y="21" text="Registro Nuevo Documento" fontWeight="bold" textDecoration="underline"/>
+	<componentes:ComboBoxTiposDocumento x="152" y="77" id="cboTiposDocumento" width="160"/>
+	<mx:Label x="72" y="49" text="Remitente"/>
+	<mx:Label x="22" y="79" text="Tipo de documento"/>
+	<mx:TextInput x="152" y="47" editable="false" id="txtRemitente"/>
+	<mx:Button x="320" y="47" width="29" id="btnBuscarRemitente" click="this.abrirBuscadorRemitente();" icon="@Embed(source='../recursos/img/folder.gif')"/>
+	<mx:TextInput x="156" y="142" width="119" id="txtNroDocumento"/>
+	<mx:Label x="49" y="144" text="Nro Documento"/>
+	<mx:NumericStepper x="156" y="181" value="1" id="numNroFolios"/>
+	<mx:Label x="82" y="183" text="Nro folios"/>
+	<mx:Label x="93" y="249" text="Sumilla"/>
+	<mx:Label x="31" y="209" text="Estado documento"/>
+	<componentes:ComboBoxEstadosDocumento x="156" y="211" id="cboEstadoDocumento"/>
+	<mx:TextArea x="156" y="248" width="172" height="35" id="txtSumilla"/>
+	<mx:Label x="69" y="295" text="Comentario" fontStyle="normal" fontWeight="normal"/>
+	<mx:TextArea x="156" y="294" width="172" height="40" id="txtComentario"/>
+	<mx:Button id="btnRegistrar" x="187" y="352" label="Guardar Documento"  click="this.btnRegistrar_CLICK()" icon="@Embed(source='../recursos/img/mini_guardar.png')"/>
+	<mx:Label x="87" y="115" text="Asunto"/>
+	<mx:TextInput x="152" y="114" id="txtAsunto"/>
+	<mx:Button x="320" y="114" width="29" id="btnBuscarAsunto" click="this.abrirBuscadorAsunto()" icon="@Embed(source='../recursos/img/folder.gif')"/>
+		</mx:Canvas>
+		<mx:Canvas width="100%" height="100%" id="canvasCargando">
+			<mx:ProgressBar x="89" y="179" indeterminate="true" label="Registrando..."/>
+		</mx:Canvas>
+	</mx:ViewStack>
+	
+	
+	
+</mx:Canvas>

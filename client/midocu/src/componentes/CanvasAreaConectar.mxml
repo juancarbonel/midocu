@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="176" height="70" xmlns:ns1="componentes.*" creationComplete="this.main()" horizontalScrollPolicy="off" verticalScrollPolicy="off"> 
+	<ns1:ComboBoxAreasPerteneceUsuario x="3" y="10" id="cboAreas" width="170"/>
+	<mx:Button x="10" y="38" label="Ingresar" id="btnConectar" click="this.conectarArea();" icon="@Embed(source='../recursos/img/pag_next.gif')" labelPlacement="left"/>
+	<mx:Script>
+		<![CDATA[
+			import flash.net.navigateToURL;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.http.HTTPService;
+		
+			private var _httpConectar:HTTPService;
+			
+			private function main():void{
+				this.init();
+			}
+			
+			private function init():void{
+				this._httpConectar=new HTTPService();
+				this._httpConectar.url = ConfigGlobal.getUrlGlobal();
+				this._httpConectar.method = "POST";
+				this._httpConectar.addEventListener(ResultEvent.RESULT, this.httpConectar_RESULT);
+				this._httpConectar.addEventListener(FaultEvent.FAULT, this.httpConectar_FAULT);	
+			}
+			
+			
+			private function httpConectar_RESULT(e:ResultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				var url:URLRequest = new URLRequest(ConfigGlobal.getUrlGlobal()+'?modulo=panelUsuarioArea');
+				navigateToURL(url,'_SELF');
+			}
+			
+			private function httpConectar_FAULT(e:FaultEvent):void{
+				Alert.show('error:' + e.fault.toString());	
+			}
+			
+			
+			private function conectarArea():void{
+				var parametros:Object = new Object();
+				parametros.accion = 'usuarioConectaArea';
+				parametros.idArea = this.cboAreas.IdAreaSeleccionada;
+				this._httpConectar.send(parametros);
+			}
+			
+			private function btnConectar_CLICK():void{
+				this.conectarArea();
+			}
+		]]>
+	</mx:Script>
+	
+</mx:Canvas>

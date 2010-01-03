@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="266" height="124" creationComplete="this.main()">
+	<mx:Script>
+		<![CDATA[
+			import configuracion.ConfigGlobal;
+			import mx.validators.StringValidator;
+			import mx.utils.StringUtil;
+			import mx.controls.Alert;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			
+			private var _http:HTTPService;
+			private var _idDocumento;
+			
+			private function main(){
+				this.init();
+			}
+			
+			private function init(){
+			/**
+			 * estableciendo _http
+			 **/ 
+			 this._http=new HTTPService();
+			 this._http.method = "POST";
+			 this._http.resultFormat = HTTPService.RESULT_FORMAT_TEXT;
+			 this._http.url = ConfigGlobal.getUrlGlobal();
+			 this._http.addEventListener(ResultEvent.RESULT, this.alObtenerRespuestaHttp);
+			 this._http.addEventListener(FaultEvent.FAULT, this.alFallarRespuestaHttp);
+			}
+			
+			private function alObtenerRespuestaHttp(e:ResultEvent):void{
+				this.lblMensaje.errorString = "";
+				this.lblMensaje.text = e.result.toString();
+				Alert.show(e.result.toString());		
+			}
+			
+			private function alFallarRespuestaHttp(e:FaultEvent):void{
+				this.lblMensaje.errorString = "a sucedido un error al enviar";
+			}
+			
+			
+			
+			
+			
+			private function registrarAnexoDocumento():void{
+				if(this._idDocumento!=null){
+					var parametros:Object=new Object();
+					parametros.registrar="anexoDocumento";
+					parametros.idDocumento = this._idDocumento;
+					parametros.nombre = this.txtNombre.text;
+					parametros.descripcion = this.txtDescripcion.text;
+					this._http.send(parametros);
+				}else{
+					Alert.show('no se puede registrar documento,idDocumento no establecido');
+				}
+			}
+			
+			private function btnRegistrarAnexo_CLICK():void{
+				if(this._idDocumento != null){
+					if(this.estanLlenadosCamposCorrectamente()==true){
+						this.registrarAnexoDocumento();	
+					}
+					
+				}else{
+				Alert.show('no se puede registrar documento,idDocumento no establecido');
+				}
+			}
+			
+			
+			private function estanLlenadosCamposCorrectamente():Boolean{
+				var estado:Boolean = true;
+				this.txtNombre.errorString = ""
+				this.txtDescripcion.errorString = "";
+				
+				if(this.txtNombre.text == ""){
+					this.txtNombre.errorString = "Ud. no ingreso algun nombre";
+					estado = false;
+				}
+				
+				return estado;
+			}
+			
+			public function setIdDocumento(valor:String):void{
+				this._idDocumento = valor;
+			}
+			
+			
+			
+		]]>
+	</mx:Script>
+	<mx:Form x="0" y="14" width="266" height="87" verticalScrollPolicy="off" horizontalScrollPolicy="off">
+		<mx:FormItem label="Nombre" fontFamily="Verdana" required="true">
+			<mx:TextInput id="txtNombre"/>
+		</mx:FormItem>
+		<mx:FormItem label="Descripcion" height="53">
+			<mx:TextArea id="txtDescripcion" height="34"/>
+		</mx:FormItem>
+	</mx:Form>
+	<mx:Button label="Guardar Anexo" width="123" x="138" y="99" id="btnRegistrarAnexo" click="this.btnRegistrarAnexo_CLICK()"/>
+	
+	
+	<mx:Label x="0" y="0" width="266" id="lblMensaje"/>
+</mx:Canvas>

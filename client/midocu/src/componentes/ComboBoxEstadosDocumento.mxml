@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ComboBox xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="this.main();">
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import mx.controls.Alert;
+			import mx.collections.ArrayCollection;
+			import configuracion.ConfigGlobal;
+			import mx.rpc.http.HTTPService;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			private var _http:HTTPService;
+			private var _idEstadoSeleccionado:String;
+			
+			private function main():void
+			{
+				this.init();
+				
+			}
+			
+			
+			private function init(){
+				this._http=new HTTPService();
+				this._http.method="POST";
+				this._http.resultFormat= HTTPService.RESULT_FORMAT_E4X;
+				this._http.url=ConfigGlobal.getUrlGlobal();
+				this._http.addEventListener(ResultEvent.RESULT,this.alObtenerRespuestaHttp);
+				this._http.addEventListener(FaultEvent.FAULT,this.alFallarRespuestaHttp);
+				
+				//event al cambiar
+				this.addEventListener(ListEvent.CHANGE,this.alCambiar);
+			}
+			
+			private function alCambiar(e:ListEvent):void{
+				//Alert.show(this.selectedItem.Id);
+			}
+			
+			public function cargar():void{
+				//armando parametros a enviar
+				var parametros:Object=new Object();
+				parametros.mostradorXml='estadosDocumento';
+				this._http.send(parametros);
+			}
+			
+			private function alObtenerRespuestaHttp(e:ResultEvent):void{
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				this.labelField="Nombre";
+				this.dataProvider=e.result.EstadoDocumento;
+				this.seleccionarSegunIdEstado();
+
+			}
+			
+			private function alFallarRespuestaHttp(e:FaultEvent):void{
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.fault.toString());
+				}
+				
+				this.enabled=true;
+				this.text="Fallo Al cargar";
+			}
+			
+			public function getIdEstadoSeleccionado():String{
+				//recodar que el id depende de la estructura XML que cargue
+				return this.selectedItem.Id;
+			}
+			
+			public function setIdEstadoSeleccionado(valor:String){
+				this._idEstadoSeleccionado = valor;
+			}
+			
+			public function get http():HTTPService{
+				return this.http;
+			}
+			
+			private  function seleccionarSegunIdEstado(){
+				for each(var elemento:Object in this.dataProvider){
+					if(elemento.Id == this._idEstadoSeleccionado){
+						this.selectedItem = elemento;
+					}
+				}
+			}
+			
+			
+			
+		]]>
+	</mx:Script>
+</mx:ComboBox>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:ComboBox xmlns:mx="http://www.adobe.com/2006/mxml"  creationComplete="this.main()">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.messaging.messages.HTTPRequestMessage;
+			import mx.messaging.channels.HTTPChannel;
+			import mx.rpc.http.HTTPService;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import configuracion.ConfigGlobal;
+			
+			private var _http:HTTPService;
+			private function main():void{
+				this.init();
+				this.cargar();
+			}
+			
+			private function init():void{
+				//estableciendo HttpService
+				this._http=new HTTPService();
+				this._http.url= ConfigGlobal.getUrlGlobal();
+				this._http.method= "POST";
+				this._http.resultFormat= HTTPService.RESULT_FORMAT_E4X;
+				//this._http.resultFormat= HTTPService.RESULT_FORMAT_TEXT;
+				this._http.addEventListener(ResultEvent.RESULT,this.alObtenerRespuesta);
+				this._http.addEventListener(FaultEvent.FAULT,this.alFallarRespuesta);
+				
+			}
+			
+			private function alObtenerRespuesta(e:ResultEvent):void{
+				
+				if(ConfigGlobal.getDebug()){
+					Alert.show(e.result.toString());
+				}
+				
+				this.labelField ="Nombre";
+				this.dataProvider = e.result.Area;
+			}
+			
+			private function alFallarRespuesta(e:FaultEvent):void{
+				this.text="Fallo al cargar Areas";
+			}
+			
+			public function cargar():void{
+				var parametros:Object=new Object();
+				parametros.mostradorXml="areasPerteneceUsuario";
+				this._http.send(parametros);
+				
+			}
+			
+			public function get Http():HTTPService{
+				return this._http;
+			}
+			
+			public function get IdAreaSeleccionada():String{
+				return this.selectedItem.Id;
+			}
+			
+		]]>
+	</mx:Script>
+</mx:ComboBox>
